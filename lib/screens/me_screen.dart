@@ -1,0 +1,383 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../theme/app_colors.dart';
+import '../widgets/notifications_dialog.dart';
+import '../widgets/profile_settings_sheet.dart';
+import 'local_battles_screen.dart';
+import 'my_territories_screen.dart';
+import 'rp_history_screen.dart';
+import 'shop_screen.dart';
+
+class MeScreen extends StatelessWidget {
+  const MeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    
+    return StreamBuilder<DocumentSnapshot>(
+      stream: user != null ? FirebaseFirestore.instance.collection('Users').doc(user.uid).snapshots() : null,
+      builder: (context, snapshot) {
+        String displayUsername = user?.email?.split('@').first ?? 'AGENT_UNKNOWN';
+        String initials = displayUsername.isNotEmpty 
+            ? displayUsername.substring(0, displayUsername.length >= 2 ? 2 : 1).toUpperCase() 
+            : 'U';
+
+        Map<String, dynamic>? data;
+
+        if (snapshot.hasData && snapshot.data!.data() != null) {
+          data = snapshot.data!.data() as Map<String, dynamic>;
+          String firstName = data['firstName'] ?? '';
+          String lastName = data['lastName'] ?? '';
+          
+          if (firstName.trim().isNotEmpty && lastName.trim().isNotEmpty) {
+            initials = '${firstName.trim()[0]}${lastName.trim()[0]}'.toUpperCase();
+          } else if (firstName.trim().isNotEmpty) {
+            initials = firstName.trim()[0].toUpperCase();
+          } else if (data['username'] != null && data['username'].toString().trim().isNotEmpty) {
+            displayUsername = data['username'];
+            initials = displayUsername.substring(0, displayUsername.length >= 2 ? 2 : 1).toUpperCase();
+          }
+        }
+        
+        bool showNotificationDot = false;
+        if (data != null) {
+          showNotificationDot = !(data['welcomeRPClaimed'] ?? false);
+        }
+        
+        return Scaffold(
+          backgroundColor: AppColors.surfaceDark,
+          appBar: AppBar(
+            backgroundColor: AppColors.surfaceDark,
+            elevation: 0,
+            leading: IconButton(
+              icon: Stack(
+                children: [
+                  const Icon(Icons.notifications_none, color: Colors.white),
+                  if (showNotificationDot)
+                    Positioned(
+                      top: 0,
+                      right: 0,
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                showNotificationsFullscreen(context);
+              },
+            ),
+            title: Text(
+              'ME',
+              style: GoogleFonts.orbitron(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.5,
+              ),
+            ),
+            centerTitle: true,
+            actions: [
+              Padding(
+                padding: const EdgeInsets.only(right: 16.0),
+                child: GestureDetector(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    showProfileSettingsSheet(context, onNavigateToMe: () {});
+                  },
+                  child: CircleAvatar(
+                    radius: 16,
+                    backgroundColor: AppColors.surfaceCardSolid,
+                    child: Text(
+                      initials,
+                      style: GoogleFonts.orbitron(fontSize: 10, color: AppColors.radarCyan),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildProfileHeader(context, displayUsername, initials, data),
+                const SizedBox(height: 32),
+                _buildSectionHeader('Dhaav Store', 'Gear up and customize', Icons.storefront),
+                const SizedBox(height: 16),
+                _buildShopCard(context),
+                const SizedBox(height: 32),
+                _buildSectionHeader('Local battles', 'Compete for local dominance', Icons.local_fire_department),
+                const SizedBox(height: 16),
+                _buildLocalBattlesCard(context),
+                const SizedBox(height: 32),
+                _buildSectionHeader('My Territories', 'Manage your area', Icons.map),
+                const SizedBox(height: 16),
+                _buildTerritoriesCard(context),
+                const SizedBox(height: 48),
+                Center(child: _buildLogoutButton()),
+                const SizedBox(height: 32),
+              ],
+            ),
+          ),
+        );
+      }
+    );
+  }
+
+  Widget _buildProfileHeader(BuildContext context, String name, String initials, Map<String, dynamic>? data) {
+    final rpBalance = data?['rpBalance'] ?? 0;
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            CircleAvatar(
+              radius: 28,
+              backgroundColor: AppColors.surfaceCardSolid,
+              child: Text(
+                initials,
+                style: GoogleFonts.orbitron(fontSize: 18, color: AppColors.radarCyan),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name.toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const RPHistoryScreen()),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.amber.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.stars, color: AppColors.amber, size: 16),
+                          const SizedBox(width: 4),
+                          Text(
+                            '$rpBalance RP BALANCE',
+                            style: GoogleFonts.orbitron(
+                              color: AppColors.amber,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.chevron_right, color: AppColors.amber, size: 16),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSectionHeader(String title, String subtitle, IconData icon) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.surfaceCardSolid,
+          ),
+          child: Icon(icon, color: Colors.white, size: 20),
+        ),
+        const SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: GoogleFonts.inter(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+            if (subtitle.isNotEmpty)
+              Text(
+                subtitle,
+                style: GoogleFonts.inter(
+                  color: AppColors.textMuted,
+                  fontSize: 12,
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildShopCard(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCardSolid,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.amber.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Spend your hard-earned RP on premium avatars, custom map trails, and exclusive gear.',
+            style: GoogleFonts.inter(
+              color: AppColors.textMuted,
+              fontSize: 14,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.amber.withOpacity(0.1),
+                  foregroundColor: AppColors.amber,
+                  side: const BorderSide(color: AppColors.amber),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ShopScreen()));
+                },
+                child: Text(
+                  'ENTER SHOP',
+                  style: GoogleFonts.orbitron(
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLocalBattlesCard(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const LocalBattlesScreen()));
+      },
+      child: Container(
+        width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCardSolid,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'No local battles yet',
+            style: GoogleFonts.inter(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "Once you capture an area that overlaps with another runner, it will show up here.",
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              color: AppColors.textMuted,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+      ),
+    );
+  }
+
+  Widget _buildTerritoriesCard(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const MyTerritoriesScreen()));
+      },
+      child: Container(
+        width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCardSolid,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.map, color: AppColors.textMuted, size: 32),
+          const SizedBox(height: 16),
+          Text(
+            'No territory captured yet',
+            style: GoogleFonts.inter(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "Complete runs to capture areas in your city. Your empire begins here.",
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              color: AppColors.textMuted,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+      ),
+    );
+  }
+
+  Widget _buildLogoutButton() {
+    return TextButton.icon(
+      style: TextButton.styleFrom(
+        foregroundColor: AppColors.errorRed,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      ),
+      onPressed: () => FirebaseAuth.instance.signOut(),
+      icon: const Icon(Icons.logout),
+      label: const Text('LOGOUT', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+    );
+  }
+}

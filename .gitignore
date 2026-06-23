@@ -1,0 +1,42 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+migrate.json
+
+# IntelliJ IDEA project files
+.idea/
+*.iml
+*.ipr
+*.iws
+.idea_modules/
+
+# Visual Studio Code project files
+.vscode/
+
+# Flutter/Dart files
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+
+# Android related
+**/android/key.properties
+**/android/app/local.properties
+**/android/app/shared_local.properties
+**/android/app/google-services.json
+
+# iOS related
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/Flutter/flutter_settings.d
+**/ios/Flutter/Generated.xcconfig
+**/ios/Runner/GoogleService-Info.plist

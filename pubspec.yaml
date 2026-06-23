@@ -1,0 +1,39 @@
+name: dhaav
+description: A gamified fitness Flutter app that turns real-world running into a GTA-style turf war.
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Navigation & Styling
+  google_fonts: ^8.1.0
+
+  # Firebase Core and Services (Spark plan)
+  firebase_core: ^4.11.0
+  firebase_auth: ^6.5.3
+  cloud_firestore: ^6.6.0
+
+  # Map & Location Services
+  mapbox_maps_flutter: ^2.25.0
+  geolocator: ^14.0.3
+
+  # Authentication
+  google_sign_in: ^7.2.0
+
+  # Territory & Grid Management
+  h3_flutter: ^0.7.1
+  dart_jts: ^0.3.0+1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
