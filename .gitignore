@@ -40,3 +40,6 @@ migrate.json
 **/ios/Flutter/flutter_settings.d
 **/ios/Flutter/Generated.xcconfig
 **/ios/Runner/GoogleService-Info.plist
+
+# Firebase Configuration
+lib/firebase_options.dart
