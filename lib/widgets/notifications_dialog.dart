@@ -137,7 +137,7 @@ class _NotificationsListState extends State<_NotificationsList> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.notifications_off_outlined, color: Theme.of(context).hintColor, size: 64),
+            Icon(Icons.notifications_off_outlined, color: Theme.of(context).hintColor, size: 24),
             const SizedBox(height: 16),
             Text(
               'No new notifications',
