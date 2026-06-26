@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme/app_colors.dart';
+import '../theme/theme_manager.dart';
 import '../screens/edit_profile_screen.dart';
 import '../screens/run_screen.dart';
 
@@ -114,7 +115,7 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
                 child: Container(
                   margin: const EdgeInsets.symmetric(vertical: 12),
                   width: 40, height: 4,
-                  decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)),
+                  decoration: BoxDecoration(color: Theme.of(context).dividerColor, borderRadius: BorderRadius.circular(2)),
                 ),
               ),
 
@@ -131,16 +132,16 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
                         style: GoogleFonts.orbitron(fontSize: 14, color: Theme.of(context).colorScheme.primary),
                       ),
                     ),
-                    const SizedBox(width: 14),
+                    SizedBox(width: 14),
                     Expanded(
                       child: Text(
                         name.toUpperCase(),
-                        style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                        style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                     ),
                     OutlinedButton(
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Colors.white24),
+                        side: BorderSide(color: Theme.of(context).dividerColor),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       ),
@@ -149,12 +150,12 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
                         Navigator.pop(context);
                         widget.onNavigateToMe();
                       },
-                      child: Text('View profile', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 12)),
+                      child: Text('View profile', style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w600, fontSize: 12)),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
 
               // ── Edit Profile ────────────────────────────────────────────────
               _buildNavigationTile(
@@ -165,7 +166,7 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const EditProfileScreen()));
                 },
               ),
-              const Divider(color: Colors.white10, height: 1),
+              Divider(color: Theme.of(context).dividerColor, height: 1),
 
               // ── App Settings (expandable) ───────────────────────────────────
               _buildExpandableTile(
@@ -181,7 +182,7 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
                       _showNotificationSettings(context);
                     },
                   ),
-                  const Divider(color: Colors.white10, height: 1, indent: 16),
+                  Divider(color: Theme.of(context).dividerColor, height: 1, indent: 16),
                   _buildSubSection(
                     title: 'Units & Measurement',
                     subtitle: 'Kilometres & metres',
@@ -189,9 +190,28 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
                       _showUnitSettings(context);
                     },
                   ),
+                  Divider(color: Theme.of(context).dividerColor, height: 1, indent: 16),
+                  ValueListenableBuilder<bool>(
+                    valueListenable: ThemeManager().isDarkMode,
+                    builder: (context, isDark, child) {
+                      return Padding(
+                        padding: const EdgeInsets.only(left: 56, right: 16),
+                        child: SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          activeThumbColor: Theme.of(context).colorScheme.primary,
+                          title: Text('App Theme', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
+                          subtitle: Text(isDark ? 'Dark' : 'Light', style: TextStyle(color: Theme.of(context).hintColor, fontSize: 11)),
+                          value: isDark,
+                          onChanged: (val) {
+                            ThemeManager().toggleTheme();
+                          },
+                        ),
+                      );
+                    },
+                  ),
                 ],
               ),
-              const Divider(color: Colors.white10, height: 1),
+              Divider(color: Theme.of(context).dividerColor, height: 1),
 
               // ── Privacy (expandable) ────────────────────────────────────────
               _buildExpandableTile(
@@ -205,7 +225,7 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
                     label: 'Remove all my account data',
                     onTap: () => _confirmDeleteData(context),
                   ),
-                  const Divider(color: Colors.white10, height: 1, indent: 16),
+                  Divider(color: Theme.of(context).dividerColor, height: 1, indent: 16),
                   _buildSubAction(
                     icon: _isAnonymous ? Icons.visibility : Icons.visibility_off,
                     label: _isAnonymous ? 'Make my account visible' : 'Make my account anonymous',
@@ -213,7 +233,7 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
                   ),
                 ],
               ),
-              const Divider(color: Colors.white10, height: 1),
+              Divider(color: Theme.of(context).dividerColor, height: 1),
 
               // ── Contact Support ─────────────────────────────────────────────
               _buildNavigationTile(
@@ -226,9 +246,9 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
                   );
                 },
               ),
-              const Divider(color: Colors.white10, height: 1),
+              Divider(color: Theme.of(context).dividerColor, height: 1),
 
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
 
               // ── Sign Out ────────────────────────────────────────────────────
               Center(
@@ -236,7 +256,7 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.white24),
+                      side: BorderSide(color: Theme.of(context).dividerColor),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
@@ -244,12 +264,12 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
                       Navigator.pop(context);
                       FirebaseAuth.instance.signOut();
                     },
-                    icon: const Icon(Icons.logout, color: Colors.white),
-                    label: Text('Sign out', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold)),
+                    icon: Icon(Icons.logout, color: Theme.of(context).colorScheme.onSurface),
+                    label: Text('Sign out', style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
 
               // ── Delete Account ──────────────────────────────────────────────
               Center(
@@ -266,7 +286,7 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
                   ),
                 ),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
             ],
           ),
         );
@@ -282,7 +302,7 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(vertical: 4),
         leading: Icon(icon, color: Theme.of(context).hintColor),
-        title: Text(label, style: GoogleFonts.inter(color: Colors.white, fontSize: 15)),
+        title: Text(label, style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontSize: 15)),
         trailing: Icon(Icons.chevron_right, color: Theme.of(context).hintColor),
         onTap: () {
           HapticFeedback.lightImpact();
@@ -306,7 +326,7 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
           child: ListTile(
             contentPadding: const EdgeInsets.symmetric(vertical: 4),
             leading: Icon(icon, color: expanded ? Colors.white : Theme.of(context).hintColor),
-            title: Text(label, style: GoogleFonts.inter(color: Colors.white, fontWeight: expanded ? FontWeight.bold : FontWeight.normal, fontSize: 15)),
+            title: Text(label, style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontWeight: expanded ? FontWeight.bold : FontWeight.normal, fontSize: 15)),
             trailing: AnimatedRotation(
               turns: expanded ? 0.5 : 0,
               duration: const Duration(milliseconds: 200),
@@ -339,7 +359,7 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
     return Material(
       color: Colors.transparent,
       child: ListTile(
-        title: Text(title, style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+        title: Text(title, style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 14)),
         subtitle: Text(subtitle, style: GoogleFonts.inter(color: Theme.of(context).colorScheme.primary, fontSize: 12)),
         onTap: onTap,
       ),
@@ -351,7 +371,7 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
       color: Colors.transparent,
       child: ListTile(
         leading: Icon(icon, color: Theme.of(context).hintColor, size: 20),
-        title: Text(label, style: GoogleFonts.inter(color: Colors.white, fontSize: 14)),
+        title: Text(label, style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontSize: 14)),
         trailing: Icon(Icons.chevron_right, color: Theme.of(context).hintColor, size: 18),
         onTap: onTap,
       ),
@@ -366,7 +386,7 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
       builder: (dialogCtx) => AlertDialog(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Theme.of(context).colorScheme.primary)),
-        title: Text('Manage Notifications', style: GoogleFonts.orbitron(color: Colors.white, fontSize: 16)),
+        title: Text('Manage Notifications', style: GoogleFonts.orbitron(color: Theme.of(context).colorScheme.onSurface, fontSize: 16)),
         content: Material(color: Colors.transparent, child: _NotificationSettingsBody()),
         actions: [
           TextButton(
@@ -384,7 +404,7 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
       builder: (dialogCtx) => AlertDialog(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Theme.of(context).colorScheme.primary)),
-        title: Text('Units & Measurement', style: GoogleFonts.orbitron(color: Colors.white, fontSize: 16)),
+        title: Text('Units & Measurement', style: GoogleFonts.orbitron(color: Theme.of(context).colorScheme.onSurface, fontSize: 16)),
         content: Material(color: Colors.transparent, child: _UnitSettingsBody()),
         actions: [
           TextButton(
@@ -403,9 +423,9 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: AppColors.errorRed)),
         title: Text('Delete Account Data', style: GoogleFonts.orbitron(color: AppColors.errorRed, fontSize: 16)),
-        content: const Text(
+        content: Text(
           'This will permanently remove all your run history, territories, and stats. This action cannot be undone.',
-          style: TextStyle(color: Colors.white70),
+          style: TextStyle(color: Theme.of(context).hintColor),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.of(dialogCtx).pop(), child: Text('Cancel', style: TextStyle(color: Theme.of(context).hintColor))),
@@ -460,7 +480,7 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
                 debugPrint('Failed to delete user data: $e');
               }
             },
-            child: const Text('Delete', style: TextStyle(color: AppColors.errorRed, fontWeight: FontWeight.bold)),
+            child: Text('Delete', style: TextStyle(color: AppColors.errorRed, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -479,7 +499,7 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
           newAnonymousState 
               ? 'Your profile will be hidden from all leaderboards. Other players will not be able to see you. You can undo this anytime.'
               : 'Your profile will become visible on the leaderboards again.',
-          style: const TextStyle(color: Colors.white70),
+          style: TextStyle(color: Theme.of(context).hintColor),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.of(dialogCtx).pop(), child: Text('Cancel', style: TextStyle(color: Theme.of(context).hintColor))),
@@ -505,9 +525,9 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: AppColors.errorRed)),
         title: Text('DELETE ACCOUNT', style: GoogleFonts.orbitron(color: AppColors.errorRed, fontSize: 16)),
-        content: const Text(
+        content: Text(
           'This will permanently delete your account, including all data, runs, territories, and stats. This cannot be reversed.',
-          style: TextStyle(color: Colors.white70),
+          style: TextStyle(color: Theme.of(context).hintColor),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.of(dialogCtx).pop(), child: Text('Cancel', style: TextStyle(color: Theme.of(context).hintColor))),
@@ -523,7 +543,7 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
                 await FirebaseAuth.instance.signOut();
               }
             },
-            child: const Text('Delete Forever', style: TextStyle(color: AppColors.errorRed, fontWeight: FontWeight.bold)),
+            child: Text('Delete Forever', style: TextStyle(color: AppColors.errorRed, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -604,7 +624,7 @@ class _NotificationSettingsBodyState extends State<_NotificationSettingsBody> {
     return SwitchListTile(
       contentPadding: EdgeInsets.zero,
       activeThumbColor: Theme.of(context).colorScheme.primary,
-      title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+      title: Text(title, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
       subtitle: Text(subtitle, style: TextStyle(color: Theme.of(context).hintColor, fontSize: 11)),
       value: value,
       onChanged: onChanged,
@@ -658,7 +678,7 @@ class _UnitSettingsBodyState extends State<_UnitSettingsBody> {
         RadioListTile<String>(
           contentPadding: EdgeInsets.zero,
           activeColor: Theme.of(context).colorScheme.primary,
-          title: const Text('Kilometres & metres', style: TextStyle(color: Colors.white)),
+          title: Text('Kilometres & metres', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
           subtitle: Text('Metric system', style: TextStyle(color: Theme.of(context).hintColor, fontSize: 12)),
           value: 'metric',
           groupValue: _selectedUnit,
@@ -670,7 +690,7 @@ class _UnitSettingsBodyState extends State<_UnitSettingsBody> {
         RadioListTile<String>(
           contentPadding: EdgeInsets.zero,
           activeColor: Theme.of(context).colorScheme.primary,
-          title: const Text('Miles & feet', style: TextStyle(color: Colors.white)),
+          title: Text('Miles & feet', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
           subtitle: Text('Imperial system', style: TextStyle(color: Theme.of(context).hintColor, fontSize: 12)),
           value: 'imperial',
           groupValue: _selectedUnit,

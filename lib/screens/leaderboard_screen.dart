@@ -47,11 +47,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
         child: Column(
           children: [
             _buildHeader(),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             _buildCategoryTabs(),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             _buildTimeToggle(),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Expanded(child: _buildLeaderboardList()),
           ],
         ),
@@ -69,7 +69,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
         style: GoogleFonts.orbitron(
           fontSize: 22,
           fontWeight: FontWeight.w800,
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.onSurface,
           letterSpacing: 1.5,
           shadows: [
             Shadow(color: Theme.of(context).colorScheme.primary, blurRadius: 8),
@@ -119,7 +119,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                       color: selected ? Theme.of(context).colorScheme.primary : Theme.of(context).hintColor,
                       size: 20,
                     ),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 6),
                     Text(
                       labels[i],
                       textAlign: TextAlign.center,
@@ -152,7 +152,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white10),
+          border: Border.all(color: Theme.of(context).dividerColor),
         ),
         child: Row(
           children: [
@@ -387,7 +387,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                     ),
                   ),
                 ),
-                const SizedBox(width: 14),
+                SizedBox(width: 14),
 
                 // Avatar placeholder
                 CircleAvatar(
@@ -402,7 +402,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
 
                 // Name
                 Expanded(
@@ -410,7 +410,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                     name.toUpperCase(),
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.inter(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.5,
@@ -425,7 +425,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                   decoration: BoxDecoration(
                     color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white10),
+                    border: Border.all(color: Theme.of(context).dividerColor),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -438,7 +438,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(width: 4),
+                      SizedBox(width: 4),
                       Text(
                         label,
                         style: GoogleFonts.inter(
@@ -470,16 +470,16 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(icon, color: Theme.of(context).hintColor, size: 48),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Text(
             title,
             style: GoogleFonts.inter(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.bold,
               fontSize: 18,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 48),
             child: Text(

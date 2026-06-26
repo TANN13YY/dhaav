@@ -66,7 +66,7 @@ class _IntervalSetupScreenState extends State<IntervalSetupScreen> {
                   displayValue,
                   textAlign: TextAlign.center,
                   style: GoogleFonts.orbitron(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
@@ -135,7 +135,7 @@ class _IntervalSetupScreenState extends State<IntervalSetupScreen> {
               isSets: true,
               accentColor: Colors.amber,
             ),
-            const SizedBox(height: 40),
+            SizedBox(height: 40),
             Center(
               child: Text(
                 'YOUR WORKOUT IS SAVED AUTOMATICALLY.\nSWITCH TO THE MAP TO START YOUR RUN.',

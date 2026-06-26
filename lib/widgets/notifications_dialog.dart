@@ -20,13 +20,13 @@ void showNotificationsFullscreen(BuildContext context) {
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             elevation: 0,
             leading: IconButton(
-              icon: const Icon(Icons.close, color: Colors.white),
+              icon: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurface),
               onPressed: () => Navigator.pop(ctx),
             ),
             title: Text(
               'NOTIFICATIONS',
               style: GoogleFonts.orbitron(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
@@ -129,7 +129,7 @@ class _NotificationsListState extends State<_NotificationsList> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.gold));
+      return Center(child: CircularProgressIndicator(color: AppColors.gold));
     }
 
     if (!_hasWelcomeBonus) {
@@ -138,12 +138,12 @@ class _NotificationsListState extends State<_NotificationsList> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.notifications_off_outlined, color: Theme.of(context).hintColor, size: 24),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Text(
               'No new notifications',
-              style: GoogleFonts.inter(color: Colors.white70, fontSize: 16),
+              style: GoogleFonts.inter(color: Theme.of(context).hintColor, fontSize: 16),
             ),
-            const SizedBox(height: 40),
+            SizedBox(height: 40),
           ],
         ),
       );
@@ -167,18 +167,18 @@ class _NotificationsListState extends State<_NotificationsList> {
                   color: AppColors.gold.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.stars, color: AppColors.gold),
+                child: Icon(Icons.stars, color: AppColors.gold),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Welcome to Dhaav!',
-                      style: GoogleFonts.orbitron(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                      style: GoogleFonts.orbitron(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     Text(
                       "You've been granted a welcome bonus of 100 RP to kickstart your journey.",
                       style: GoogleFonts.inter(color: Theme.of(context).hintColor, fontSize: 13),

@@ -56,28 +56,28 @@ class _RPHistoryScreenState extends State<RPHistoryScreen> {
           'RP HISTORY',
           style: GoogleFonts.orbitron(
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.gold))
+          ? Center(child: CircularProgressIndicator(color: AppColors.gold))
           : _rpRuns.isEmpty
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.stars, color: Theme.of(context).hintColor, size: 48),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
                       Text(
                         'No RP earned yet',
                         style: GoogleFonts.inter(
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       Text(
                         'Complete a run to start earning RP!',
                         style: GoogleFonts.inter(color: Theme.of(context).hintColor),
@@ -113,13 +113,13 @@ class _RPHistoryScreenState extends State<RPHistoryScreen> {
                                   fontSize: 12,
                                 ),
                               ),
-                              const SizedBox(height: 4),
+                              SizedBox(height: 4),
                               Text(
                                 run.totalDistanceKm == 0 
                                   ? 'Welcome Bonus' 
                                   : '${run.totalDistanceKm.toStringAsFixed(2)} km Run',
                                 style: GoogleFonts.inter(
-                                  color: Colors.white,
+                                  color: Theme.of(context).colorScheme.onSurface,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
                                 ),

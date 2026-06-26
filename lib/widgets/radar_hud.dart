@@ -15,7 +15,7 @@ class RadarHud extends StatelessWidget {
       top: topPadding + 12,
       left: 12,
       right: 12,
-      child: const Row(
+      child: Row(
         children: [
           Expanded(child: _RpPanel()),
           SizedBox(width: 8),
@@ -194,10 +194,10 @@ class _WantedPanelState extends State<_WantedPanel>
                       ? ShaderMask(
                           shaderCallback: (bounds) =>
                               LinearGradient(colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.primary]).createShader(bounds),
-                          child: const Icon(
+                          child: Icon(
                             Icons.star_rounded,
                             size: 16,
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         )
                       : Icon(
@@ -263,7 +263,7 @@ class _HudCard extends StatelessWidget {
                     letterSpacing: 1.5,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4),
                 // Value row
                 Row(
                   mainAxisSize: MainAxisSize.min,

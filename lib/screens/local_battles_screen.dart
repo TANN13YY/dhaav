@@ -63,7 +63,7 @@ class _LocalBattlesScreenState extends State<LocalBattlesScreen> {
           'LOCAL BATTLES',
           style: GoogleFonts.orbitron(
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ),
@@ -75,16 +75,16 @@ class _LocalBattlesScreenState extends State<LocalBattlesScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.local_fire_department, color: Theme.of(context).hintColor, size: 48),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
                       Text(
                         'No local battles yet',
                         style: GoogleFonts.inter(
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 32),
                         child: Text(
@@ -130,11 +130,11 @@ class _LocalBattlesScreenState extends State<LocalBattlesScreen> {
                                   fontSize: 12,
                                 ),
                               ),
-                              const SizedBox(height: 6),
+                              SizedBox(height: 6),
                               Text(
                                 title,
                                 style: GoogleFonts.inter(
-                                  color: Colors.white,
+                                  color: Theme.of(context).colorScheme.onSurface,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
                                 ),

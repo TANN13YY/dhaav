@@ -334,24 +334,24 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
                   child: Icon(Icons.close, color: Theme.of(context).hintColor, size: 28),
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(
                 "I'M FINISHED\nRUNNING",
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 28,
                   fontWeight: FontWeight.w900,
                   height: 1.1,
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               Text(
                 "Great job! Well done on finishing your run. Let's just confirm you're done so we don't end it early.",
                 textAlign: TextAlign.center,
-                style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.9), fontSize: 14),
+                style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.9), fontSize: 14),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -371,7 +371,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               TextButton(
                 onPressed: () {
                   Navigator.pop(ctx);
@@ -432,7 +432,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
               margin: const EdgeInsets.symmetric(vertical: 12),
               width: 40, height: 4,
               decoration: BoxDecoration(
-                color: Colors.white24,
+                color: Theme.of(context).dividerColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -441,17 +441,17 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
               child: Row(
                 children: [
                   Icon(Icons.history, color: Theme.of(context).colorScheme.primary),
-                  const SizedBox(width: 10),
+                  SizedBox(width: 10),
                   Text(
                     'RUN HISTORY',
                     style: GoogleFonts.orbitron(
-                      color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16,
+                      color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16,
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Expanded(
               child: ValueListenableBuilder<int>(
                 valueListenable: RunScreen.historyNotifier,
@@ -462,12 +462,12 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.directions_run, color: Theme.of(context).hintColor, size: 48),
-                          const SizedBox(height: 12),
+                          SizedBox(height: 12),
                           Text(
                             'No runs yet',
-                            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                            style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16),
                           ),
-                          const SizedBox(height: 6),
+                          SizedBox(height: 6),
                           Text(
                             'Complete a run to see it here.',
                             style: GoogleFonts.inter(color: Theme.of(context).hintColor, fontSize: 14),
@@ -509,23 +509,23 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
         ),
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        child: const Icon(Icons.delete, color: Colors.white),
+        child: Icon(Icons.delete, color: Theme.of(context).colorScheme.onSurface),
       ),
       confirmDismiss: (direction) async {
         return await showDialog<bool>(
           context: context,
           builder: (ctx) => AlertDialog(
             backgroundColor: Theme.of(context).cardColor,
-            title: Text('Delete Run', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold)),
+            title: Text('Delete Run', style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold)),
             content: Text('Are you sure you want to delete this run? This will also remove the RP earned.', style: GoogleFonts.inter(color: Theme.of(context).hintColor)),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(false),
-                child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+                child: Text('Cancel', style: TextStyle(color: Theme.of(context).hintColor)),
               ),
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(true),
-                child: const Text('Delete', style: TextStyle(color: AppColors.errorRed)),
+                child: Text('Delete', style: TextStyle(color: AppColors.errorRed)),
               ),
             ],
           ),
@@ -552,7 +552,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white10),
+          border: Border.all(color: Theme.of(context).dividerColor),
         ),
       child: Row(
         children: [
@@ -571,7 +571,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
               ),
             ),
           ),
-          const SizedBox(width: 14),
+          SizedBox(width: 14),
 
           // Run details
           Expanded(
@@ -584,21 +584,21 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
                     color: Theme.of(context).hintColor, fontSize: 12,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4),
                 Row(
                   children: [
                     Text(
                       '${run.totalDistanceKm.toStringAsFixed(2)} km',
                       style: GoogleFonts.inter(
-                        color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15,
+                        color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 15,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Text(
                       durationStr,
                       style: GoogleFonts.inter(color: Theme.of(context).hintColor, fontSize: 13),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Text(
                       '${_formatPace(run.averagePaceMinPerKm)} /km',
                       style: GoogleFonts.inter(color: Theme.of(context).hintColor, fontSize: 13),
@@ -626,7 +626,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(Icons.map, color: Theme.of(context).colorScheme.primary, size: 14),
-                    const SizedBox(width: 4),
+                    SizedBox(width: 4),
                     Text(
                       'View',
                       style: GoogleFonts.inter(
@@ -712,7 +712,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    const Icon(Icons.history, color: Colors.white, size: 22),
+                    Icon(Icons.history, color: Theme.of(context).colorScheme.onSurface, size: 22),
                     ValueListenableBuilder<int>(
                       valueListenable: RunScreen.historyNotifier,
                       builder: (context, _, __) {
@@ -728,7 +728,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
                             alignment: Alignment.center,
                             child: Text(
                               '${RunScreen.runHistory.length}',
-                              style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                              style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 8, fontWeight: FontWeight.bold),
                             ),
                           ),
                         );
@@ -750,10 +750,10 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
                 width: 44, height: 44,
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onSurface,
                   boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6)],
                 ),
-                child: const Icon(Icons.my_location, color: Colors.blueAccent, size: 22),
+                child: Icon(Icons.my_location, color: Colors.blueAccent, size: 22),
               ),
             ),
           ),
@@ -768,7 +768,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
                 width: 44, height: 44,
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onSurface,
                   boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6)],
                 ),
                 child: Icon(
@@ -822,23 +822,23 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
                     children: [
                       Text(
                         '$capturedM2',
-                        style: GoogleFonts.inter(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900),
+                        style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontSize: 32, fontWeight: FontWeight.w900),
                       ),
-                      const SizedBox(width: 4),
+                      SizedBox(width: 4),
                       Text(
                         'm²',
-                        style: GoogleFonts.inter(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900),
+                        style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.w900),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   Text(
                     'Area covered',
                     style: GoogleFonts.inter(color: Theme.of(context).hintColor, fontSize: 12),
                   ),
                 ],
               ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Text(
             _runState == RunState.idle 
                 ? 'Standby' 
@@ -851,7 +851,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
               fontWeight: FontWeight.bold
             ),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
 
           // Stats row
           Row(
@@ -862,11 +862,11 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
               _buildStat(_formatPace(pace), '', 'Average pace'),
             ],
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
 
           // Action buttons
           _buildActionButtons(),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
         ],
       ),
     );
@@ -880,16 +880,16 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
           children: [
             Text(
               value,
-              style: GoogleFonts.inter(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
+              style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.w900),
             ),
             if (unit.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(bottom: 2),
-                child: Text(unit, style: GoogleFonts.inter(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+                child: Text(unit, style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontSize: 12, fontWeight: FontWeight.w700)),
               ),
           ],
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: 4),
         Text(label, style: GoogleFonts.inter(color: Theme.of(context).hintColor, fontSize: 12)),
       ],
     );
@@ -902,14 +902,14 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
           width: double.infinity,
           child: OutlinedButton(
             style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Colors.white24),
+              side: BorderSide(color: Theme.of(context).dividerColor),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
             ),
             onPressed: _startRun,
             child: Text(
               'Start Run',
-              style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+              style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16),
             ),
           ),
         );
@@ -930,14 +930,14 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
                       ? Theme.of(context).colorScheme.error.withValues(alpha: 0.3)
                       : Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(28),
-                  border: Border.all(color: Colors.white24),
+                  border: Border.all(color: Theme.of(context).dividerColor),
                 ),
                 child: Center(
                   child: Text(
                     _isHolding && _holdAction == 'pause'
                         ? 'Hold to pause... ${(2 - _holdProgress * 2).ceil()}s'
                         : 'Hold to Pause',
-                    style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                    style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                 ),
               ),
@@ -952,19 +952,19 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
             Expanded(
               child: OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.white24),
+                  side: BorderSide(color: Theme.of(context).dividerColor),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
                 ),
                 onPressed: _resumeRun,
-                icon: const Icon(Icons.play_arrow, color: Colors.white),
+                icon: Icon(Icons.play_arrow, color: Theme.of(context).colorScheme.onSurface),
                 label: Text(
                   'Resume Run',
-                  style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                  style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 14),
                 ),
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             // Hold to Finish
             Expanded(
               child: GestureDetector(
@@ -985,13 +985,13 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.stop, color: Colors.white, size: 18),
-                          const SizedBox(width: 6),
+                          Icon(Icons.stop, color: Theme.of(context).colorScheme.onSurface, size: 18),
+                          SizedBox(width: 6),
                           Text(
                             _isHolding && _holdAction == 'finish'
                                 ? '${(2 - _holdProgress * 2).ceil()}s'
                                 : 'Hold to Finish',
-                            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                            style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 14),
                           ),
                         ],
                       ),

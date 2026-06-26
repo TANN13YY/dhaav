@@ -126,17 +126,17 @@ class _LoginSheetBodyState extends State<_LoginSheetBody>
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           _buildHeader(),
-                          const SizedBox(height: 28),
+                          SizedBox(height: 28),
                           _buildEmailField(),
-                          const SizedBox(height: 14),
+                          SizedBox(height: 14),
                           _buildPasswordField(),
                           if (_error != null) ...[
-                            const SizedBox(height: 10),
+                            SizedBox(height: 10),
                             _buildError(),
                           ],
-                          const SizedBox(height: 22),
+                          SizedBox(height: 22),
                           _buildSubmitButton(),
-                          const SizedBox(height: 18),
+                          SizedBox(height: 18),
                           _buildDivider(),
                           const SizedBox(height: 18),
                           _buildGoogleButton(),
@@ -169,7 +169,7 @@ class _LoginSheetBodyState extends State<_LoginSheetBody>
             borderRadius: BorderRadius.circular(2),
           ),
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: 20),
         // Glowing title
         Text(
           'DHAAV',
@@ -185,7 +185,7 @@ class _LoginSheetBodyState extends State<_LoginSheetBody>
             ],
           ),
         ),
-        const SizedBox(height: 6),
+        SizedBox(height: 6),
         Text(
           _isLogin ? 'Welcome back, runner.' : 'Claim your territory.',
           style: TextStyle(
@@ -250,7 +250,7 @@ class _LoginSheetBodyState extends State<_LoginSheetBody>
         children: [
           Icon(Icons.error_outline_rounded,
               size: 14, color: Theme.of(context).colorScheme.error),
-          const SizedBox(width: 6),
+          SizedBox(width: 6),
           Expanded(
             child: Text(
               _error!,
@@ -297,12 +297,12 @@ class _LoginSheetBodyState extends State<_LoginSheetBody>
                 blendMode: BlendMode.srcATop,
                 child: Center(
                   child: _loading
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         )
                       : Text(
@@ -311,7 +311,7 @@ class _LoginSheetBodyState extends State<_LoginSheetBody>
                             fontFamily: 'Orbitron',
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.onSurface,
                             letterSpacing: 2,
                           ),
                         ),

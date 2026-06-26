@@ -16,7 +16,7 @@ class ShopScreen extends StatelessWidget {
           'DHAAV STORE',
           style: GoogleFonts.orbitron(
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ),
@@ -26,17 +26,17 @@ class ShopScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.storefront, size: 80, color: AppColors.gold),
-              const SizedBox(height: 24),
+              Icon(Icons.storefront, size: 80, color: AppColors.gold),
+              SizedBox(height: 24),
               Text(
                 'Coming Soon',
                 style: GoogleFonts.orbitron(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Text(
                 'The store is currently empty.\nCheck back later for premium gear, avatars, and custom trails!',
                 textAlign: TextAlign.center,

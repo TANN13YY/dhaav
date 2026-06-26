@@ -56,7 +56,7 @@ class MeScreen extends StatelessWidget {
             leading: IconButton(
               icon: Stack(
                 children: [
-                  const Icon(Icons.notifications_none, color: Colors.white),
+                  Icon(Icons.notifications_none, color: Theme.of(context).colorScheme.onSurface),
                   if (showNotificationDot)
                     Positioned(
                       top: 0,
@@ -80,7 +80,7 @@ class MeScreen extends StatelessWidget {
             title: Text(
               'ME',
               style: GoogleFonts.orbitron(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1.5,
               ),
@@ -112,15 +112,15 @@ class MeScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildProfileHeader(context, displayUsername, initials, data),
-                const SizedBox(height: 32),
+                SizedBox(height: 32),
                 _buildSectionHeader(context, 'Dhaav Store', 'Gear up and customize', Icons.storefront),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 _buildShopCard(context),
-                const SizedBox(height: 32),
+                SizedBox(height: 32),
                 _buildSectionHeader(context, 'Local battles', 'Compete for local dominance', Icons.local_fire_department),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 _buildLocalBattlesCard(context),
-                const SizedBox(height: 32),
+                SizedBox(height: 32),
                 _buildSectionHeader(context, 'My Territories', 'Manage your area', Icons.map),
                 const SizedBox(height: 16),
                 _buildTerritoriesCard(context),
@@ -151,20 +151,19 @@ class MeScreen extends StatelessWidget {
                 style: GoogleFonts.orbitron(fontSize: 18, color: Theme.of(context).colorScheme.primary),
               ),
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     name.toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
@@ -181,8 +180,8 @@ class MeScreen extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.stars, color: AppColors.gold, size: 16),
-                          const SizedBox(width: 4),
+                          Icon(Icons.stars, color: AppColors.gold, size: 16),
+                          SizedBox(width: 4),
                           Text(
                             '$rpBalance RP BALANCE',
                             style: GoogleFonts.orbitron(
@@ -191,8 +190,8 @@ class MeScreen extends StatelessWidget {
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                          const SizedBox(width: 4),
-                          const Icon(Icons.chevron_right, color: AppColors.gold, size: 16),
+                          SizedBox(width: 4),
+                          Icon(Icons.chevron_right, color: AppColors.gold, size: 16),
                         ],
                       ),
                     ),
@@ -215,16 +214,16 @@ class MeScreen extends StatelessWidget {
             shape: BoxShape.circle,
             color: Theme.of(context).cardColor,
           ),
-          child: Icon(icon, color: Colors.white, size: 20),
+          child: Icon(icon, color: Theme.of(context).colorScheme.onSurface, size: 20),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: 12),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               title,
               style: GoogleFonts.inter(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.bold,
                 fontSize: 18,
               ),
@@ -263,7 +262,7 @@ class MeScreen extends StatelessWidget {
               height: 1.4,
             ),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -309,12 +308,12 @@ class MeScreen extends StatelessWidget {
           Text(
             'No local battles yet',
             style: GoogleFonts.inter(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.bold,
               fontSize: 16,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             "Once you capture an area that overlaps with another runner, it will show up here.",
             textAlign: TextAlign.center,
@@ -345,16 +344,16 @@ class MeScreen extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.map, color: Theme.of(context).hintColor, size: 32),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Text(
             'No territory captured yet',
             style: GoogleFonts.inter(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.bold,
               fontSize: 16,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             "Complete runs to capture areas in your city. Your empire begins here.",
             textAlign: TextAlign.center,

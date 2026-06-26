@@ -67,7 +67,7 @@ class _TerritoryMapScreenState extends State<TerritoryMapScreen> {
           'AREA DETAILS',
           style: GoogleFonts.orbitron(
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ),
@@ -100,12 +100,12 @@ class _TerritoryMapScreenState extends State<TerritoryMapScreen> {
                       Text(
                         'Captured Area',
                         style: GoogleFonts.inter(
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4),
                       Text(
                         '${widget.territory.coordinates.length} points mapped',
                         style: GoogleFonts.inter(color: Theme.of(context).hintColor, fontSize: 14),

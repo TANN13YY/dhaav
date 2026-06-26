@@ -54,7 +54,7 @@ class _MyTerritoriesScreenState extends State<MyTerritoriesScreen> {
           'MY AREAS',
           style: GoogleFonts.orbitron(
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ),
@@ -66,16 +66,16 @@ class _MyTerritoriesScreenState extends State<MyTerritoriesScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.map, color: Theme.of(context).hintColor, size: 48),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
                       Text(
                         'No areas captured yet',
                         style: GoogleFonts.inter(
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       Text(
                         'Complete runs to capture areas in your city.',
                         style: GoogleFonts.inter(color: Theme.of(context).hintColor),
@@ -114,16 +114,16 @@ class _MyTerritoriesScreenState extends State<MyTerritoriesScreen> {
                                 Text(
                                   'Area #${index + 1}',
                                   style: GoogleFonts.inter(
-                                    color: Colors.white,
+                                    color: Theme.of(context).colorScheme.onSurface,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
+                                SizedBox(height: 4),
                                 Row(
                                   children: [
-                                    const Icon(Icons.stars, color: AppColors.gold, size: 14),
-                                    const SizedBox(width: 4),
+                                    Icon(Icons.stars, color: AppColors.gold, size: 14),
+                                    SizedBox(width: 4),
                                     Text(
                                       '${territory.rp} RP Value',
                                       style: GoogleFonts.orbitron(

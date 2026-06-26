@@ -58,9 +58,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         _usernameCtrl = TextEditingController(text: data['username'] ?? '');
         _dob = data['dob'] ?? 'Add a DOB';
         _gender = data['gender'] ?? 'Prefer not to say';
-        if (data['territoryColor'] != null) {
-          _territoryColor = Color(data['territoryColor']);
-        }
+        
       } else {
         _setDefaultFields();
       }
@@ -120,7 +118,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           mainAxisSize: MainAxisSize.min,
           children: ['Male', 'Female', 'Non-binary', 'Prefer not to say']
               .map((g) => ListTile(
-                    title: Text(g, style: const TextStyle(color: Colors.white)),
+                    title: Text(g, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                     trailing: _gender == g
                         ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary)
                         : null,
@@ -147,8 +145,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Choose Territory Colour', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 20),
+            Text('Choose Territory Colour', style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16)),
+            SizedBox(height: 20),
             Wrap(
               spacing: 16,
               runSpacing: 16,
@@ -163,14 +161,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     color: c,
                     borderRadius: BorderRadius.circular(12),
                     border: _territoryColor == c
-                        ? Border.all(color: Colors.white, width: 3)
+                        ? Border.all(color: Theme.of(context).colorScheme.onSurface, width: 3)
                         : null,
                     boxShadow: [BoxShadow(color: c.withValues(alpha: 0.5), blurRadius: 8)],
                   ),
                 ),
               )).toList(),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
           ],
         ),
       ),
@@ -188,7 +186,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         'username': _usernameCtrl.text,
         'dob': _dob,
         'gender': _gender,
-        'territoryColor': _territoryColor.toARGB32(),
+        
       }, SetOptions(merge: true));
     }
     if (mounted) {
@@ -227,10 +225,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('PROFILE', style: GoogleFonts.orbitron(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text('PROFILE', style: GoogleFonts.orbitron(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold)),
         centerTitle: true,
         actions: [
           TextButton(
@@ -272,19 +270,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 }
               ),
             ),
-            const SizedBox(height: 32),
+            SizedBox(height: 32),
 
             // Name fields
             Row(
               children: [
                 Expanded(child: _buildField('First Name', _firstNameCtrl)),
-                const SizedBox(width: 16),
+                SizedBox(width: 16),
                 Expanded(child: _buildField('Last Name', _lastNameCtrl)),
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             _buildField('Username', _usernameCtrl),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
 
             // DOB & Gender
             Row(
@@ -295,7 +293,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     child: _buildReadOnlyField('Date of Birth', _dob),
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16),
                 Expanded(
                   child: GestureDetector(
                     onTap: _pickGender,
@@ -306,14 +304,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
             const SizedBox(height: 40),
 
-            // Territory color & Current skin
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    children: [
-                      Text('Territory colour', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                      const SizedBox(height: 16),
+            
                       Container(
                         width: 60, height: 60,
                         decoration: BoxDecoration(
@@ -325,11 +316,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       const SizedBox(height: 16),
                       OutlinedButton(
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Colors.white24),
+                          side: BorderSide(color: Theme.of(context).dividerColor),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                         ),
                         onPressed: _showColorPicker,
-                        child: Text('Change Colour', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold)),
+                        child: Text('Change Colour', style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),
@@ -337,18 +328,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 Expanded(
                   child: Column(
                     children: [
-                      Text('Current skin', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                      const SizedBox(height: 16),
+                      Text('Current skin', style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 14)),
+                      SizedBox(height: 16),
                       Container(
                         width: 80, height: 60,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: Colors.white24, style: BorderStyle.solid),
+                          border: Border.all(color: Theme.of(context).dividerColor, style: BorderStyle.solid),
                         ),
                         alignment: Alignment.center,
                         child: Text('No skin', style: GoogleFonts.inter(color: Theme.of(context).hintColor, fontSize: 12)),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
                       OutlinedButton(
                         style: OutlinedButton.styleFrom(
                           side: BorderSide(color: Theme.of(context).colorScheme.error),
@@ -377,21 +368,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: GoogleFonts.inter(color: Theme.of(context).hintColor, fontSize: 12)),
-        const SizedBox(height: 4),
+        SizedBox(height: 4),
         TextField(
           controller: ctrl,
-          style: const TextStyle(color: Colors.white, fontSize: 16),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16),
           decoration: InputDecoration(
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
             filled: true,
             fillColor: Theme.of(context).cardColor,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Colors.white12),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Colors.white12),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
@@ -409,14 +400,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white12),
+        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label, style: GoogleFonts.inter(color: Theme.of(context).hintColor, fontSize: 11)),
-          const SizedBox(height: 2),
-          Text(value, style: GoogleFonts.inter(color: Colors.white, fontSize: 14)),
+          SizedBox(height: 2),
+          Text(value, style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontSize: 14)),
         ],
       ),
     );
