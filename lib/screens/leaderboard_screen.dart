@@ -15,7 +15,7 @@ class LeaderboardScreen extends StatefulWidget {
 class _LeaderboardScreenState extends State<LeaderboardScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  bool _isFriends = false; // false = Worldwide, true = Friends
+  bool _isWeekly = false; // false = All Time, true = Weekly
 
   @override
   void initState() {
@@ -30,6 +30,15 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     super.dispose();
   }
 
+  /// Returns the current ISO week identifier, e.g. "2026-W26"
+  String _getWeekId() {
+    final now = DateTime.now();
+    final jan4 = DateTime(now.year, 1, 4);
+    final dayOfYear = now.difference(DateTime(now.year, 1, 1)).inDays;
+    final weekNumber = ((dayOfYear - now.weekday + jan4.weekday + 6) ~/ 7);
+    return '${now.year}-W${weekNumber.toString().padLeft(2, '0')}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -41,7 +50,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
             const SizedBox(height: 8),
             _buildCategoryTabs(),
             const SizedBox(height: 12),
-            _buildScopeToggle(),
+            _buildTimeToggle(),
             const SizedBox(height: 12),
             Expanded(child: _buildLeaderboardList()),
           ],
@@ -73,8 +82,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   // ─── Top Category Tabs ──────────────────────────────────────────────────
 
   Widget _buildCategoryTabs() {
-    final labels = ['OVERALL', 'TOP GAINERS', 'TOP STEALERS'];
-    final icons = [Icons.bar_chart, Icons.trending_up, Icons.flash_on];
+    final labels = ['OVERALL', 'TOP GAINERS', 'TOP LOSERS'];
+    final icons = [Icons.bar_chart, Icons.trending_up, Icons.trending_down];
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -98,17 +107,17 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
                     color: selected
-                        ? AppColors.radarCyan.withOpacity(0.5)
-                        : Colors.white12,
+                        ? AppColors.radarCyan.withValues(alpha: 0.5)
+                        : Colors.white10,
+                    width: selected ? 1.5 : 1,
                   ),
                 ),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       icons[i],
                       color: selected ? AppColors.radarCyan : AppColors.textMuted,
-                      size: 22,
+                      size: 20,
                     ),
                     const SizedBox(height: 6),
                     Text(
@@ -132,27 +141,28 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     );
   }
 
-  // ─── Friends / Worldwide Toggle ─────────────────────────────────────────
+  // ─── Weekly / All Time Toggle ───────────────────────────────────────────
 
-  Widget _buildScopeToggle() {
+  Widget _buildTimeToggle() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
-        height: 44,
+        height: 40,
+        padding: const EdgeInsets.all(3),
         decoration: BoxDecoration(
           color: AppColors.surfaceCardSolid,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white12),
+          border: Border.all(color: Colors.white10),
         ),
         child: Row(
           children: [
-            _buildScopeButton('Friends', _isFriends, () {
+            _buildTimeButton('All Time', !_isWeekly, () {
               HapticFeedback.selectionClick();
-              setState(() => _isFriends = true);
+              setState(() => _isWeekly = false);
             }),
-            _buildScopeButton('Worldwide', !_isFriends, () {
+            _buildTimeButton('Weekly', _isWeekly, () {
               HapticFeedback.selectionClick();
-              setState(() => _isFriends = false);
+              setState(() => _isWeekly = true);
             }),
           ],
         ),
@@ -160,7 +170,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     );
   }
 
-  Widget _buildScopeButton(String label, bool active, VoidCallback onTap) {
+  Widget _buildTimeButton(String label, bool active, VoidCallback onTap) {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
@@ -187,45 +197,59 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   // ─── Leaderboard List ───────────────────────────────────────────────────
 
   Widget _buildLeaderboardList() {
-    if (_isFriends) {
-      return _buildEmptyState(
-        icon: Icons.people_outline,
-        title: 'No friends added yet',
-        subtitle: 'Add friends to see how you stack up against them.',
-      );
-    }
-
-    // Determine Firestore field based on selected tab
+    // Determine the field to order by and display label
     String orderByField;
+    String metricLabel;
+
     switch (_tabController.index) {
-      case 0:
-        orderByField = 'total_rp'; // Overall = net balance
+      case 0: // Overall — net RP (rpGained)
+        orderByField = _isWeekly ? 'weeklyRpGained' : 'rpGained';
+        metricLabel = 'RP';
         break;
-      case 1:
-        orderByField = 'total_rp'; // Top Gainers = most territory gained
+      case 1: // Top Gainers
+        orderByField = _isWeekly ? 'weeklyRpGained' : 'rpGained';
+        metricLabel = 'RP';
         break;
-      case 2:
-        orderByField = 'total_rp'; // Top Stealers = most territory stolen
+      case 2: // Top Losers
+        orderByField = _isWeekly ? 'weeklyRpLost' : 'rpLost';
+        metricLabel = 'RP';
         break;
       default:
-        orderByField = 'total_rp';
+        orderByField = 'rpGained';
+        metricLabel = 'RP';
     }
 
+    // Build the Firestore query
+    Query query = FirebaseFirestore.instance.collection('Users');
+
+    if (_isWeekly) {
+      final weekId = _getWeekId();
+      query = query.where('currentWeekId', isEqualTo: weekId);
+    }
+
+    query = query.orderBy(orderByField, descending: true).limit(50);
+
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('Users')
-          .orderBy(orderByField, descending: true)
-          .limit(50)
-          .snapshots(),
+      stream: query.snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
-            child:
-                CircularProgressIndicator(color: AppColors.radarCyan, strokeWidth: 2),
+            child: CircularProgressIndicator(
+                color: AppColors.radarCyan, strokeWidth: 2),
           );
         }
 
         if (snapshot.hasError) {
+          // Common: missing composite index — show a helpful message
+          final errorMsg = snapshot.error.toString();
+          if (errorMsg.contains('FAILED_PRECONDITION') || errorMsg.contains('index')) {
+            return _buildEmptyState(
+              icon: Icons.build_circle_outlined,
+              title: 'Index Required',
+              subtitle:
+                  'A Firestore composite index is needed for this query. Check the debug console for the index creation link.',
+            );
+          }
           return _buildEmptyState(
             icon: Icons.cloud_off,
             title: 'Connection Error',
@@ -239,7 +263,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
           return _buildEmptyState(
             icon: Icons.emoji_events_outlined,
             title: 'No rankings yet',
-            subtitle: 'Start running to claim territory and appear here!',
+            subtitle: _isWeekly
+                ? 'No one has earned RP this week yet. Start running!'
+                : 'Start running to earn RP and appear here!',
           );
         }
 
@@ -248,9 +274,47 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
           itemCount: docs.length,
           itemBuilder: (context, index) {
             final data = docs[index].data() as Map<String, dynamic>;
-            final name = data['name'] ?? data['username'] ?? 'Anonymous';
-            final rp = data['total_rp'] ?? 0;
-            return _buildRankCard(index + 1, name.toString(), rp as int);
+            final firstName = data['firstName'] ?? '';
+            final lastName = data['lastName'] ?? '';
+            final username = data['username'] ?? '';
+            
+            // Build display name
+            String name;
+            if (firstName.toString().trim().isNotEmpty) {
+              name = lastName.toString().trim().isNotEmpty
+                  ? '${firstName.toString().trim()} ${lastName.toString().trim()}'
+                  : firstName.toString().trim();
+            } else if (username.toString().trim().isNotEmpty) {
+              name = username.toString().trim();
+            } else {
+              name = 'Anonymous';
+            }
+
+            // Get the metric value based on current tab
+            int metricValue;
+            switch (_tabController.index) {
+              case 0: // Overall — show net: rpGained - rpLost
+                final gained = (data[_isWeekly ? 'weeklyRpGained' : 'rpGained'] ?? 0) as num;
+                final lost = (data[_isWeekly ? 'weeklyRpLost' : 'rpLost'] ?? 0) as num;
+                metricValue = (gained - lost).toInt();
+                break;
+              case 1: // Top Gainers
+                metricValue = (data[orderByField] ?? 0) as int;
+                break;
+              case 2: // Top Losers
+                metricValue = (data[orderByField] ?? 0) as int;
+                break;
+              default:
+                metricValue = 0;
+            }
+
+            return _buildRankCard(
+              index + 1,
+              name,
+              metricValue,
+              metricLabel,
+              isLoss: _tabController.index == 2,
+            );
           },
         );
       },
@@ -259,7 +323,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
 
   // ─── Rank Card ──────────────────────────────────────────────────────────
 
-  Widget _buildRankCard(int rank, String name, int rp) {
+  Widget _buildRankCard(int rank, String name, int value, String label,
+      {bool isLoss = false}) {
     final isTop3 = rank <= 3;
     final Color rankColor = rank == 1
         ? AppColors.amber
@@ -270,12 +335,16 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                 : AppColors.textMuted;
 
     final Color badgeBg = rank == 1
-        ? AppColors.amber.withOpacity(0.15)
+        ? AppColors.amber.withValues(alpha: 0.15)
         : rank == 2
-            ? Colors.grey.withOpacity(0.15)
+            ? Colors.grey.withValues(alpha: 0.15)
             : rank == 3
-                ? const Color(0xFFCD7F32).withOpacity(0.15)
+                ? const Color(0xFFCD7F32).withValues(alpha: 0.15)
                 : AppColors.surfaceCardSolid;
+
+    // Color for the RP value — red for losers tab, green/white otherwise
+    final Color valueColor = isLoss ? const Color(0xFFFF6B6B) : Colors.white;
+    final String prefix = isLoss ? '-' : '';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -290,7 +359,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
                 color: isTop3
-                    ? rankColor.withOpacity(0.4)
+                    ? rankColor.withValues(alpha: 0.4)
                     : Colors.white10,
                 width: isTop3 ? 1.5 : 1,
               ),
@@ -305,7 +374,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                     color: badgeBg,
                     shape: BoxShape.circle,
                     border: isTop3
-                        ? Border.all(color: rankColor.withOpacity(0.6))
+                        ? Border.all(color: rankColor.withValues(alpha: 0.6))
                         : null,
                   ),
                   alignment: Alignment.center,
@@ -362,16 +431,16 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        '$rp',
+                        '$prefix$value',
                         style: GoogleFonts.orbitron(
-                          color: Colors.white,
+                          color: valueColor,
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        'm²',
+                        label,
                         style: GoogleFonts.inter(
                           color: AppColors.textMuted,
                           fontSize: 11,

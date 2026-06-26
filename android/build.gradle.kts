@@ -23,13 +23,3 @@ tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
 
-subprojects {
-    project.pluginManager.withPlugin("com.android.library") {
-        project.extensions.findByName("android")?.let { ext ->
-            val setCompileSdk = ext::class.java.methods.find { 
-                it.name == "setCompileSdkVersion" || it.name == "setCompileSdk" 
-            }
-            setCompileSdk?.invoke(ext, 36)
-        }
-    }
-}

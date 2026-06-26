@@ -208,16 +208,70 @@ class TerritoryService {
 
   Future<void> creditRunRP(String uid, int rpChange) async {
     final userRef = _firestore.collection('Users').doc(uid);
-    await userRef.update({
+    final weekId = _getWeekId();
+    
+    // Read the current doc to check if we need to reset weekly counters
+    final userDoc = await userRef.get();
+    final userData = userDoc.data() ?? {};
+    final storedWeekId = userData['currentWeekId'] ?? '';
+    
+    final Map<String, dynamic> updates = {
       'rpBalance': FieldValue.increment(rpChange),
-    });
+    };
+
+    if (rpChange > 0) {
+      updates['rpGained'] = FieldValue.increment(rpChange);
+      if (storedWeekId == weekId) {
+        updates['weeklyRpGained'] = FieldValue.increment(rpChange);
+      } else {
+        // New week — reset weekly counters
+        updates['currentWeekId'] = weekId;
+        updates['weeklyRpGained'] = rpChange;
+        updates['weeklyRpLost'] = 0;
+      }
+    } else if (rpChange < 0) {
+      updates['rpLost'] = FieldValue.increment(-rpChange); // Store as positive
+      if (storedWeekId == weekId) {
+        updates['weeklyRpLost'] = FieldValue.increment(-rpChange);
+      } else {
+        updates['currentWeekId'] = weekId;
+        updates['weeklyRpGained'] = 0;
+        updates['weeklyRpLost'] = -rpChange;
+      }
+    }
+
+    await userRef.set(updates, SetOptions(merge: true));
     log('✅ Credited $rpChange RP to User: $uid for unclosed loop.');
   }
 
   void _updateUserRP(Transaction transaction, String uid, int rpChange) {
     final userRef = _firestore.collection('Users').doc(uid);
-    transaction.update(userRef, {
+    final weekId = _getWeekId();
+    
+    final Map<String, dynamic> updates = {
       'rpBalance': FieldValue.increment(rpChange),
-    });
+    };
+
+    if (rpChange > 0) {
+      updates['rpGained'] = FieldValue.increment(rpChange);
+      updates['weeklyRpGained'] = FieldValue.increment(rpChange);
+      updates['currentWeekId'] = weekId;
+    } else if (rpChange < 0) {
+      updates['rpLost'] = FieldValue.increment(-rpChange);
+      updates['weeklyRpLost'] = FieldValue.increment(-rpChange);
+      updates['currentWeekId'] = weekId;
+    }
+
+    transaction.update(userRef, updates);
+  }
+
+  /// Returns the current ISO week identifier, e.g. "2026-W26"
+  String _getWeekId() {
+    final now = DateTime.now();
+    // ISO week calculation: week 1 contains Jan 4
+    final jan4 = DateTime(now.year, 1, 4);
+    final dayOfYear = now.difference(DateTime(now.year, 1, 1)).inDays;
+    final weekNumber = ((dayOfYear - now.weekday + jan4.weekday + 6) ~/ 7);
+    return '${now.year}-W${weekNumber.toString().padLeft(2, '0')}';
   }
 }
