@@ -303,60 +303,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ],
             ),
             const SizedBox(height: 40),
-
-            
-                      Container(
-                        width: 60, height: 60,
-                        decoration: BoxDecoration(
-                          color: _territoryColor,
-                          borderRadius: BorderRadius.circular(14),
-                          boxShadow: [BoxShadow(color: _territoryColor.withValues(alpha: 0.5), blurRadius: 10)],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: Theme.of(context).dividerColor),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        ),
-                        onPressed: _showColorPicker,
-                        child: Text('Change Colour', style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold)),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    children: [
-                      Text('Current skin', style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 14)),
-                      SizedBox(height: 16),
-                      Container(
-                        width: 80, height: 60,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: Theme.of(context).dividerColor, style: BorderStyle.solid),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text('No skin', style: GoogleFonts.inter(color: Theme.of(context).hintColor, fontSize: 12)),
-                      ),
-                      SizedBox(height: 16),
-                      OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: Theme.of(context).colorScheme.error),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        ),
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Skin shop coming soon!')),
-                          );
-                        },
-                        child: Text('Change skin', style: GoogleFonts.inter(color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.bold)),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
           ],
         ),
       ),

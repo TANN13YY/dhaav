@@ -307,7 +307,7 @@ class _LoginSheetBodyState extends State<_LoginSheetBody>
                         )
                       : Text(
                           _isLogin ? 'LOG IN' : 'CREATE ACCOUNT',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'Orbitron',
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
