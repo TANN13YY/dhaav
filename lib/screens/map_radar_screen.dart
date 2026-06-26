@@ -3,6 +3,7 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import '../widgets/login_sheet.dart';
 import '../widgets/home_map_overlay.dart';
+import '../theme/theme_manager.dart';
 
 /// ── MapRadarScreen ──────────────────────────────────────────────────────────
 /// Full-screen dark Mapbox map with the floating HomeMapOverlay.
@@ -30,6 +31,7 @@ class _MapRadarScreenState extends State<MapRadarScreen> {
   @override
   void initState() {
     super.initState();
+    ThemeManager().isDarkMode.addListener(_onThemeChanged);
     if (widget.showLoginOnLaunch) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!_loginSheetShown && mounted) {
@@ -38,6 +40,17 @@ class _MapRadarScreenState extends State<MapRadarScreen> {
         }
       });
     }
+  }
+
+  void _onThemeChanged() {
+    _mapboxMap?.loadStyleURI(
+        ThemeManager().isDarkMode.value ? MapboxStyles.DARK : MapboxStyles.LIGHT);
+  }
+
+  @override
+  void dispose() {
+    ThemeManager().isDarkMode.removeListener(_onThemeChanged);
+    super.dispose();
   }
 
   void _onMapCreated(MapboxMap map) {
@@ -97,7 +110,7 @@ class _MapRadarScreenState extends State<MapRadarScreen> {
         children: [
           // ── Full-screen map ──────────────────────────────────────────────
           MapWidget(
-            styleUri: MapboxStyles.DARK,
+            styleUri: Theme.of(context).brightness == Brightness.dark ? MapboxStyles.DARK : MapboxStyles.LIGHT,
             cameraOptions: CameraOptions(
               center: Point(
                 coordinates: Position(77.2090, 28.6139), // New Delhi

@@ -21,20 +21,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _usernameCtrl;
   String _dob = 'Add a DOB';
   String _gender = 'Prefer not to say';
-  Color _territoryColor = Colors.blue;
-
-  late final List<Color> _colorOptions = [
-    Colors.blue,
-    Colors.red,
-    Colors.green,
-    Colors.purple,
-    Colors.orange,
-    Colors.teal,
-    Theme.of(context).colorScheme.primary,
-    Theme.of(context).colorScheme.error,
-    Theme.of(context).colorScheme.secondary,
-    AppColors.gold,
-  ];
 
   @override
   void initState() {
@@ -128,48 +114,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     },
                   ))
               .toList(),
-        ),
-      ),
-    );
-  }
-
-  void _showColorPicker() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Choose Territory Colour', style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16)),
-            SizedBox(height: 20),
-            Wrap(
-              spacing: 16,
-              runSpacing: 16,
-              children: _colorOptions.map((c) => GestureDetector(
-                onTap: () {
-                  setState(() => _territoryColor = c);
-                  Navigator.pop(context);
-                },
-                child: Container(
-                  width: 50, height: 50,
-                  decoration: BoxDecoration(
-                    color: c,
-                    borderRadius: BorderRadius.circular(12),
-                    border: _territoryColor == c
-                        ? Border.all(color: Theme.of(context).colorScheme.onSurface, width: 3)
-                        : null,
-                    boxShadow: [BoxShadow(color: c.withValues(alpha: 0.5), blurRadius: 8)],
-                  ),
-                ),
-              )).toList(),
-            ),
-            SizedBox(height: 24),
-          ],
         ),
       ),
     );

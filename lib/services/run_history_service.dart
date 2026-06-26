@@ -7,10 +7,10 @@ class RunHistoryService {
 
   /// Saves a run result to the database for the user.
   Future<void> saveRunResult(String userId, RunResult result) async {
-    final docRef = _firestore.collection('RunHistory').doc();
+    final docRef = _firestore.collection('RunHistory').doc(result.id);
     final data = result.toMap();
     data['owner_id'] = userId;
-    data['id'] = docRef.id; // ensure ID matches doc
+    data['id'] = result.id;
     
     await docRef.set(data);
   }

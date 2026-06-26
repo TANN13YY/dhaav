@@ -43,6 +43,7 @@ class DhaavApp extends StatelessWidget {
           title: 'Dhaav',
           debugShowCheckedModeBanner: false,
           theme: isDark ? AppTheme.dark() : AppTheme.light(),
+          themeAnimationDuration: Duration.zero,
           home: const AuthGate(),
         );
       },

@@ -12,7 +12,7 @@ import '../screens/run_screen.dart';
 void showProfileSettingsSheet(BuildContext context, {required VoidCallback onNavigateToMe}) {
   showModalBottomSheet(
     context: context,
-    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+    backgroundColor: Colors.transparent,
     isScrollControlled: true,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -104,10 +104,19 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
         }
         final name = displayUsername;
 
-        return Material(
-          color: Colors.transparent,
-          child: ListView(
-            controller: widget.scrollController,
+        return ValueListenableBuilder<bool>(
+          valueListenable: ThemeManager().isDarkMode,
+          builder: (outerContext, isDark, child) {
+            final activeTheme = isDark ? AppTheme.dark() : AppTheme.light();
+            return Theme(
+              data: activeTheme,
+              child: Builder(
+                builder: (context) {
+                  return Material(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                    child: ListView(
+                      controller: widget.scrollController,
             padding: const EdgeInsets.symmetric(horizontal: 20),
             children: [
               // Handle
@@ -191,23 +200,18 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
                     },
                   ),
                   Divider(color: Theme.of(context).dividerColor, height: 1, indent: 16),
-                  ValueListenableBuilder<bool>(
-                    valueListenable: ThemeManager().isDarkMode,
-                    builder: (context, isDark, child) {
-                      return Padding(
-                        padding: const EdgeInsets.only(left: 56, right: 16),
-                        child: SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
-                          activeThumbColor: Theme.of(context).colorScheme.primary,
-                          title: Text('App Theme', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
-                          subtitle: Text(isDark ? 'Dark' : 'Light', style: TextStyle(color: Theme.of(context).hintColor, fontSize: 11)),
-                          value: isDark,
-                          onChanged: (val) {
-                            ThemeManager().toggleTheme();
-                          },
-                        ),
-                      );
-                    },
+                  Padding(
+                    padding: const EdgeInsets.only(left: 56, right: 16),
+                    child: SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      activeThumbColor: Theme.of(context).colorScheme.primary,
+                      title: Text('App Theme', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
+                      subtitle: Text(ThemeManager().isDarkMode.value ? 'Dark' : 'Light', style: TextStyle(color: Theme.of(context).hintColor, fontSize: 11)),
+                      value: ThemeManager().isDarkMode.value,
+                      onChanged: (val) {
+                        ThemeManager().toggleTheme();
+                      },
+                    ),
                   ),
                 ],
               ),
@@ -289,6 +293,11 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
               SizedBox(height: 32),
             ],
           ),
+                  );
+                },
+              ),
+            );
+          },
         );
       }
     );

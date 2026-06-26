@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -10,6 +10,7 @@ import '../services/location_service.dart';
 import '../services/territory_service.dart';
 import '../services/run_tracker.dart';
 import '../services/run_history_service.dart';
+import '../theme/theme_manager.dart';
 
 /// Run states for the state machine
 enum RunState { idle, running, paused }
@@ -48,6 +49,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    ThemeManager().isDarkMode.addListener(_onThemeChanged);
     WidgetsBinding.instance.addObserver(this);
     _checkPermissions();
     _checkGpsStatus();
@@ -101,12 +103,18 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    ThemeManager().isDarkMode.removeListener(_onThemeChanged);
     WidgetsBinding.instance.removeObserver(this);
     _durationTimer?.cancel();
     _holdTimer?.cancel();
     _gpsSubscription?.cancel();
     _tracker.removeListener(_onTrackerUpdate);
     super.dispose();
+  }
+
+  void _onThemeChanged() {
+    _mapboxMap?.loadStyleURI(
+        ThemeManager().isDarkMode.value ? MapboxStyles.DARK : MapboxStyles.LIGHT);
   }
 
   @override
@@ -316,12 +324,8 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
         child: Container(
           padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF1E212A), Color(0xFF161820)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
+            color: Theme.of(context).cardColor,
+            border: Border.all(color: Theme.of(context).dividerColor),
             borderRadius: BorderRadius.circular(24),
           ),
           child: Column(
@@ -357,7 +361,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Colors.black,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
                   ),
@@ -687,7 +691,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
         children: [
           // Full-screen map
           MapWidget(
-            styleUri: MapboxStyles.DARK,
+            styleUri: Theme.of(context).brightness == Brightness.dark ? MapboxStyles.DARK : MapboxStyles.LIGHT,
             cameraOptions: CameraOptions(
               center: Point(coordinates: Position(77.2090, 28.6139)),
               zoom: 15.0, pitch: 45.0,
@@ -978,9 +982,10 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       decoration: BoxDecoration(
                         color: _isHolding && _holdAction == 'finish'
-                            ? Theme.of(context).colorScheme.error
-                            : const Color(0xFF1A1A2E),
+                            ? Theme.of(context).colorScheme.error.withValues(alpha: 0.3)
+                            : Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(28),
+                        border: Border.all(color: Theme.of(context).dividerColor),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,

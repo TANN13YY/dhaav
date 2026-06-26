@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import '../services/territory_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/theme_manager.dart';
 
 class TerritoryMapScreen extends StatefulWidget {
   final PolygonTerritory territory;
@@ -15,8 +16,27 @@ class TerritoryMapScreen extends StatefulWidget {
 
 class _TerritoryMapScreenState extends State<TerritoryMapScreen> {
   PolygonAnnotationManager? _polygonManager;
+  MapboxMap? _mapboxMap;
+
+  @override
+  void initState() {
+    super.initState();
+    ThemeManager().isDarkMode.addListener(_onThemeChanged);
+  }
+
+  void _onThemeChanged() {
+    _mapboxMap?.loadStyleURI(
+        ThemeManager().isDarkMode.value ? MapboxStyles.DARK : MapboxStyles.LIGHT);
+  }
+
+  @override
+  void dispose() {
+    ThemeManager().isDarkMode.removeListener(_onThemeChanged);
+    super.dispose();
+  }
 
   _onMapCreated(MapboxMap mapboxMap) async {
+    _mapboxMap = mapboxMap;
     
     // Add polygon
     _polygonManager = await mapboxMap.annotations.createPolygonAnnotationManager();
@@ -75,7 +95,7 @@ class _TerritoryMapScreenState extends State<TerritoryMapScreen> {
         children: [
           MapWidget(
             onMapCreated: _onMapCreated,
-            styleUri: "mapbox://styles/mapbox/dark-v11",
+            styleUri: Theme.of(context).brightness == Brightness.dark ? MapboxStyles.DARK : MapboxStyles.LIGHT,
             cameraOptions: CameraOptions(
               zoom: 2.0, // Default zoom before flyTo
             ),

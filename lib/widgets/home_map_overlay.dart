@@ -126,7 +126,7 @@ class HomeMapOverlay extends StatelessWidget {
     );
   }
 
-  Widget _buildIconButton(context, {required IconData icon, required VoidCallback onTap, Color color = Colors.white}) {
+  Widget _buildIconButton(context, {required IconData icon, required VoidCallback onTap, Color? color}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -143,7 +143,7 @@ class HomeMapOverlay extends StatelessWidget {
             ),
           ],
         ),
-        child: Icon(icon, color: color, size: 24),
+        child: Icon(icon, color: color ?? Theme.of(context).colorScheme.onSurface, size: 24),
       ),
     );
   }

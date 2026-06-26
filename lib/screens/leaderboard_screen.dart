@@ -71,9 +71,6 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
           fontWeight: FontWeight.w800,
           color: Theme.of(context).colorScheme.onSurface,
           letterSpacing: 1.5,
-          shadows: [
-            Shadow(color: Theme.of(context).colorScheme.primary, blurRadius: 8),
-          ],
         ),
       ),
     );
@@ -108,7 +105,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                   border: Border.all(
                     color: selected
                         ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)
-                        : Colors.white10,
+                        : Theme.of(context).dividerColor,
                     width: selected ? 1.5 : 1,
                   ),
                 ),
@@ -124,7 +121,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                       labels[i],
                       textAlign: TextAlign.center,
                       style: GoogleFonts.inter(
-                        color: selected ? Colors.white : Theme.of(context).hintColor,
+                        color: selected ? Theme.of(context).colorScheme.primary : Theme.of(context).hintColor,
                         fontSize: 10,
                         fontWeight:
                             selected ? FontWeight.bold : FontWeight.w500,
@@ -178,13 +175,13 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
           duration: const Duration(milliseconds: 200),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
-            color: active ? Theme.of(context).colorScheme.secondary : null,
+            color: active ? Theme.of(context).colorScheme.primary : null,
           ),
           alignment: Alignment.center,
           child: Text(
             label,
             style: GoogleFonts.inter(
-              color: active ? Colors.white : Theme.of(context).hintColor,
+              color: active ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).hintColor,
               fontWeight: FontWeight.bold,
               fontSize: 14,
             ),
