@@ -42,7 +42,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -72,7 +72,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
           color: Colors.white,
           letterSpacing: 1.5,
           shadows: [
-            const Shadow(color: AppColors.radarCyan, blurRadius: 8),
+            Shadow(color: Theme.of(context).colorScheme.primary, blurRadius: 8),
           ],
         ),
       ),
@@ -102,12 +102,12 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 decoration: BoxDecoration(
                   color: selected
-                      ? AppColors.surfaceCardSolid
+                      ? Theme.of(context).cardColor
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
                     color: selected
-                        ? AppColors.radarCyan.withValues(alpha: 0.5)
+                        ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)
                         : Colors.white10,
                     width: selected ? 1.5 : 1,
                   ),
@@ -116,7 +116,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                   children: [
                     Icon(
                       icons[i],
-                      color: selected ? AppColors.radarCyan : AppColors.textMuted,
+                      color: selected ? Theme.of(context).colorScheme.primary : Theme.of(context).hintColor,
                       size: 20,
                     ),
                     const SizedBox(height: 6),
@@ -124,7 +124,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                       labels[i],
                       textAlign: TextAlign.center,
                       style: GoogleFonts.inter(
-                        color: selected ? Colors.white : AppColors.textMuted,
+                        color: selected ? Colors.white : Theme.of(context).hintColor,
                         fontSize: 10,
                         fontWeight:
                             selected ? FontWeight.bold : FontWeight.w500,
@@ -150,7 +150,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
         height: 40,
         padding: const EdgeInsets.all(3),
         decoration: BoxDecoration(
-          color: AppColors.surfaceCardSolid,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.white10),
         ),
@@ -178,13 +178,13 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
           duration: const Duration(milliseconds: 200),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
-            gradient: active ? AppColors.purpleToViolet : null,
+            color: active ? Theme.of(context).colorScheme.secondary : null,
           ),
           alignment: Alignment.center,
           child: Text(
             label,
             style: GoogleFonts.inter(
-              color: active ? Colors.white : AppColors.textMuted,
+              color: active ? Colors.white : Theme.of(context).hintColor,
               fontWeight: FontWeight.bold,
               fontSize: 14,
             ),
@@ -233,9 +233,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
       stream: query.snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
+          return Center(
             child: CircularProgressIndicator(
-                color: AppColors.radarCyan, strokeWidth: 2),
+                color: Theme.of(context).colorScheme.primary, strokeWidth: 2),
           );
         }
 
@@ -327,20 +327,20 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
       {bool isLoss = false}) {
     final isTop3 = rank <= 3;
     final Color rankColor = rank == 1
-        ? AppColors.amber
+        ? AppColors.gold
         : rank == 2
             ? Colors.grey.shade300
             : rank == 3
                 ? const Color(0xFFCD7F32)
-                : AppColors.textMuted;
+                : Theme.of(context).hintColor;
 
     final Color badgeBg = rank == 1
-        ? AppColors.amber.withValues(alpha: 0.15)
+        ? AppColors.gold.withValues(alpha: 0.15)
         : rank == 2
             ? Colors.grey.withValues(alpha: 0.15)
             : rank == 3
                 ? const Color(0xFFCD7F32).withValues(alpha: 0.15)
-                : AppColors.surfaceCardSolid;
+                : Theme.of(context).cardColor;
 
     // Color for the RP value — red for losers tab, green/white otherwise
     final Color valueColor = isLoss ? const Color(0xFFFF6B6B) : Colors.white;
@@ -355,7 +355,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: AppColors.surfaceCard,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
                 color: isTop3
@@ -392,11 +392,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                 // Avatar placeholder
                 CircleAvatar(
                   radius: 18,
-                  backgroundColor: AppColors.surfaceCardSolid,
+                  backgroundColor: Theme.of(context).cardColor,
                   child: Text(
                     name.substring(0, name.length >= 2 ? 2 : 1).toUpperCase(),
                     style: GoogleFonts.inter(
-                      color: AppColors.radarCyan,
+                      color: Theme.of(context).colorScheme.primary,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
@@ -423,7 +423,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceCardSolid,
+                    color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: Colors.white10),
                   ),
@@ -442,7 +442,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                       Text(
                         label,
                         style: GoogleFonts.inter(
-                          color: AppColors.textMuted,
+                          color: Theme.of(context).hintColor,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                         ),
@@ -469,7 +469,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: AppColors.textMuted, size: 48),
+          Icon(icon, color: Theme.of(context).hintColor, size: 48),
           const SizedBox(height: 16),
           Text(
             title,
@@ -486,7 +486,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
               subtitle,
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(
-                color: AppColors.textMuted,
+                color: Theme.of(context).hintColor,
                 fontSize: 14,
               ),
             ),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../theme/app_colors.dart';
 import '../models/interval_config.dart';
 
 // Global singleton for now to easily pass the config to the map
@@ -32,16 +31,17 @@ class _IntervalSetupScreenState extends State<IntervalSetupScreen> {
     currentIntervalConfig.value = newConfig;
   }
 
-  Widget _buildDial(String label, int valueInSeconds, Function(int) onChanged, {bool isSets = false, Color accentColor = AppColors.radarCyan}) {
+  Widget _buildDial(String label, int valueInSeconds, Function(int) onChanged, {bool isSets = false, Color? accentColor}) {
+    accentColor ??= Theme.of(context).colorScheme.primary;
     final displayValue = isSets ? valueInSeconds.toString() : '${(valueInSeconds / 60).floor()}:${(valueInSeconds % 60).toString().padLeft(2, '0')}';
     
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surfaceCardSolid,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: accentColor.withOpacity(0.3), width: 1),
+        border: Border.all(color: accentColor.withValues(alpha: 0.3), width: 1),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -49,7 +49,7 @@ class _IntervalSetupScreenState extends State<IntervalSetupScreen> {
           Text(
             label,
             style: GoogleFonts.orbitron(
-              color: AppColors.textMuted,
+              color: Theme.of(context).hintColor,
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
@@ -86,14 +86,14 @@ class _IntervalSetupScreenState extends State<IntervalSetupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
           'INTERVAL SETUP',
           style: GoogleFonts.orbitron(
-            color: AppColors.radarCyan,
+            color: Theme.of(context).colorScheme.primary,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -116,7 +116,7 @@ class _IntervalSetupScreenState extends State<IntervalSetupScreen> {
               (v) {
                 if (v >= 15) _updateConfig(IntervalConfig(warmupSeconds: _config.warmupSeconds, workSeconds: v, restSeconds: _config.restSeconds, sets: _config.sets));
               },
-              accentColor: AppColors.crimson,
+              accentColor: Theme.of(context).colorScheme.error,
             ),
             _buildDial(
               'REST',
@@ -124,7 +124,7 @@ class _IntervalSetupScreenState extends State<IntervalSetupScreen> {
               (v) {
                 if (v >= 0) _updateConfig(IntervalConfig(warmupSeconds: _config.warmupSeconds, workSeconds: _config.workSeconds, restSeconds: v, sets: _config.sets));
               },
-              accentColor: AppColors.radarCyanDim,
+              accentColor: Theme.of(context).dividerColor,
             ),
             _buildDial(
               'SETS',
@@ -141,7 +141,7 @@ class _IntervalSetupScreenState extends State<IntervalSetupScreen> {
                 'YOUR WORKOUT IS SAVED AUTOMATICALLY.\nSWITCH TO THE MAP TO START YOUR RUN.',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.orbitron(
-                  color: AppColors.textMuted.withOpacity(0.5),
+                  color: Theme.of(context).hintColor.withValues(alpha: 0.5),
                   fontSize: 12,
                 ),
               ),

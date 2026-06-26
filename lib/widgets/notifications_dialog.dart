@@ -13,11 +13,11 @@ void showNotificationsFullscreen(BuildContext context) {
     useSafeArea: false,
     builder: (ctx) {
       return Dialog.fullscreen(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         child: Scaffold(
-          backgroundColor: AppColors.surfaceDark,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: AppBar(
-            backgroundColor: AppColors.surfaceDark,
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             elevation: 0,
             leading: IconButton(
               icon: const Icon(Icons.close, color: Colors.white),
@@ -129,7 +129,7 @@ class _NotificationsListState extends State<_NotificationsList> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.amber));
+      return const Center(child: CircularProgressIndicator(color: AppColors.gold));
     }
 
     if (!_hasWelcomeBonus) {
@@ -137,7 +137,7 @@ class _NotificationsListState extends State<_NotificationsList> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.notifications_off_outlined, color: AppColors.textMuted, size: 64),
+            Icon(Icons.notifications_off_outlined, color: Theme.of(context).hintColor, size: 64),
             const SizedBox(height: 16),
             Text(
               'No new notifications',
@@ -155,19 +155,19 @@ class _NotificationsListState extends State<_NotificationsList> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.surfaceCardSolid,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.amber.withOpacity(0.3)),
+            border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)),
           ),
           child: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.amber.withOpacity(0.1),
+                  color: AppColors.gold.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.stars, color: AppColors.amber),
+                child: const Icon(Icons.stars, color: AppColors.gold),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -181,7 +181,7 @@ class _NotificationsListState extends State<_NotificationsList> {
                     const SizedBox(height: 4),
                     Text(
                       "You've been granted a welcome bonus of 100 RP to kickstart your journey.",
-                      style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 13),
+                      style: GoogleFonts.inter(color: Theme.of(context).hintColor, fontSize: 13),
                     ),
                   ],
                 ),
@@ -189,7 +189,7 @@ class _NotificationsListState extends State<_NotificationsList> {
               const SizedBox(width: 12),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.amber,
+                  backgroundColor: AppColors.gold,
                   foregroundColor: Colors.black,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),

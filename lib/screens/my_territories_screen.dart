@@ -6,7 +6,7 @@ import '../theme/app_colors.dart';
 import 'territory_map_screen.dart';
 
 class MyTerritoriesScreen extends StatefulWidget {
-  const MyTerritoriesScreen({Key? key}) : super(key: key);
+  const MyTerritoriesScreen({super.key});
 
   @override
   State<MyTerritoriesScreen> createState() => _MyTerritoriesScreenState();
@@ -46,9 +46,9 @@ class _MyTerritoriesScreenState extends State<MyTerritoriesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         title: Text(
           'MY AREAS',
@@ -59,13 +59,13 @@ class _MyTerritoriesScreenState extends State<MyTerritoriesScreen> {
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.radarCyan))
+          ? Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary))
           : _territories.isEmpty
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.map, color: AppColors.textMuted, size: 48),
+                      Icon(Icons.map, color: Theme.of(context).hintColor, size: 48),
                       const SizedBox(height: 16),
                       Text(
                         'No areas captured yet',
@@ -78,7 +78,7 @@ class _MyTerritoriesScreenState extends State<MyTerritoriesScreen> {
                       const SizedBox(height: 8),
                       Text(
                         'Complete runs to capture areas in your city.',
-                        style: GoogleFonts.inter(color: AppColors.textMuted),
+                        style: GoogleFonts.inter(color: Theme.of(context).hintColor),
                       ),
                     ],
                   ),
@@ -101,9 +101,9 @@ class _MyTerritoriesScreenState extends State<MyTerritoriesScreen> {
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.surfaceCardSolid,
+                          color: Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.radarCyan.withOpacity(0.3)),
+                          border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -122,12 +122,12 @@ class _MyTerritoriesScreenState extends State<MyTerritoriesScreen> {
                                 const SizedBox(height: 4),
                                 Row(
                                   children: [
-                                    const Icon(Icons.stars, color: AppColors.amber, size: 14),
+                                    const Icon(Icons.stars, color: AppColors.gold, size: 14),
                                     const SizedBox(width: 4),
                                     Text(
                                       '${territory.rp} RP Value',
                                       style: GoogleFonts.orbitron(
-                                        color: AppColors.amber,
+                                        color: AppColors.gold,
                                         fontWeight: FontWeight.bold,
                                         fontSize: 12,
                                       ),
@@ -136,7 +136,7 @@ class _MyTerritoriesScreenState extends State<MyTerritoriesScreen> {
                                 ),
                               ],
                             ),
-                            const Icon(Icons.chevron_right, color: AppColors.radarCyan),
+                            Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.primary),
                           ],
                         ),
                       ),

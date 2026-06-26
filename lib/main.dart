@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'screens/main_layout.dart';
 import 'theme/app_colors.dart';
+import 'theme/theme_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,44 +19,33 @@ void main() async {
   // Initialize Firebase
   await Firebase.initializeApp();
 
-  // Immersive system UI — edge-to-edge dark chrome
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.light,
-    systemNavigationBarColor: AppColors.surfaceDark,
-    systemNavigationBarIconBrightness: Brightness.light,
-  ));
-
   runApp(const DhaavApp());
 }
 
-/// ── Root App Widget ─────────────────────────────────────────────────────────
+/// ── Root App Widget ────────────────────────────────────────────────────────
 class DhaavApp extends StatelessWidget {
   const DhaavApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Dhaav - GTA Turf War Fitness',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: const ColorScheme.dark(
-          primary: AppColors.radarCyan,
-          secondary: AppColors.crimson,
-          surface: AppColors.surfaceDark,
-          error: AppColors.errorRed,
-          onPrimary: AppColors.surfaceDark,
-          onSecondary: Colors.white,
-          onSurface: AppColors.textPrimary,
-          onError: Colors.white,
-        ),
-        scaffoldBackgroundColor: AppColors.surfaceDark,
-        textTheme: GoogleFonts.orbitronTextTheme(
-          ThemeData.dark().textTheme,
-        ),
-        useMaterial3: true,
-      ),
-      home: const AuthGate(),
+    return ValueListenableBuilder<bool>(
+      valueListenable: ThemeManager().isDarkMode,
+      builder: (context, isDark, _) {
+        // Update system UI to match the current theme
+        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+          systemNavigationBarColor: isDark ? const Color(0xFF121212) : Colors.white,
+          systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+        ));
+
+        return MaterialApp(
+          title: 'Dhaav',
+          debugShowCheckedModeBanner: false,
+          theme: isDark ? AppTheme.dark() : AppTheme.light(),
+          home: const AuthGate(),
+        );
+      },
     );
   }
 }
@@ -71,10 +60,10 @@ class AuthGate extends StatelessWidget {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
+          return Scaffold(
             body: Center(
               child: CircularProgressIndicator(
-                color: AppColors.radarCyan,
+                color: Theme.of(context).colorScheme.primary,
                 strokeWidth: 2,
               ),
             ),

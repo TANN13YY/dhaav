@@ -7,7 +7,7 @@ import '../theme/app_colors.dart';
 class TerritoryMapScreen extends StatefulWidget {
   final PolygonTerritory territory;
 
-  const TerritoryMapScreen({Key? key, required this.territory}) : super(key: key);
+  const TerritoryMapScreen({super.key, required this.territory});
 
   @override
   State<TerritoryMapScreen> createState() => _TerritoryMapScreenState();
@@ -25,9 +25,9 @@ class _TerritoryMapScreenState extends State<TerritoryMapScreen> {
     if (coords.isNotEmpty) {
       await _polygonManager!.create(PolygonAnnotationOptions(
         geometry: Polygon(coordinates: [coords]),
-        fillColor: AppColors.radarCyan.value,
+        fillColor: AppColors.territoryOwn.toARGB32(),
         fillOpacity: 0.4,
-        fillOutlineColor: AppColors.radarCyan.value,
+        fillOutlineColor: AppColors.territoryOwn.toARGB32(),
       ));
 
       // Calculate bounding box to fit camera
@@ -59,9 +59,9 @@ class _TerritoryMapScreenState extends State<TerritoryMapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         title: Text(
           'AREA DETAILS',
@@ -87,9 +87,9 @@ class _TerritoryMapScreenState extends State<TerritoryMapScreen> {
             child: Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppColors.surfaceCardSolid.withOpacity(0.9),
+                color: Theme.of(context).cardColor.withValues(alpha: 0.9),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.radarCyan.withOpacity(0.5)),
+                border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -108,14 +108,14 @@ class _TerritoryMapScreenState extends State<TerritoryMapScreen> {
                       const SizedBox(height: 4),
                       Text(
                         '${widget.territory.coordinates.length} points mapped',
-                        style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 14),
+                        style: GoogleFonts.inter(color: Theme.of(context).hintColor, fontSize: 14),
                       ),
                     ],
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: AppColors.amber.withOpacity(0.1),
+                      color: AppColors.gold.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -123,13 +123,13 @@ class _TerritoryMapScreenState extends State<TerritoryMapScreen> {
                         Text(
                           '${widget.territory.rp}',
                           style: GoogleFonts.orbitron(
-                            color: AppColors.amber,
+                            color: AppColors.gold,
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
                           ),
                         ),
                         const SizedBox(width: 4),
-                        const Icon(Icons.stars, color: AppColors.amber, size: 16),
+                        const Icon(Icons.stars, color: AppColors.gold, size: 16),
                       ],
                     ),
                   ),

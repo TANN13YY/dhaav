@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -156,9 +156,9 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
       final coords = t.coordinates.map((p) => Position(p[1], p[0])).toList();
       return PolygonAnnotationOptions(
         geometry: Polygon(coordinates: [coords]),
-        fillColor: (isMine ? AppColors.radarCyan : AppColors.crimson).value,
+        fillColor: (isMine ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.error).toARGB32(),
         fillOpacity: 0.3,
-        fillOutlineColor: (isMine ? AppColors.radarCyan : AppColors.crimson).value,
+        fillOutlineColor: (isMine ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.error).toARGB32(),
       );
     }).toList();
 
@@ -273,9 +273,9 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
     _holdProgress = 0.0;
     HapticFeedback.lightImpact();
     
-    const tickMs = 50;
-    const totalMs = 2000;
-    _holdTimer = Timer.periodic(const Duration(milliseconds: tickMs), (timer) {
+    const int tickMs = 50;
+    const int totalMs = 2000;
+    _holdTimer = Timer.periodic(Duration(milliseconds: tickMs), (timer) {
       if (!_isHolding) {
         timer.cancel();
         return;
@@ -321,7 +321,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            border: Border.all(color: AppColors.radarCyan.withOpacity(0.3)),
+            border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
             borderRadius: BorderRadius.circular(24),
           ),
           child: Column(
@@ -331,7 +331,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
                 alignment: Alignment.topRight,
                 child: GestureDetector(
                   onTap: () => Navigator.pop(ctx),
-                  child: const Icon(Icons.close, color: AppColors.textMuted, size: 28),
+                  child: Icon(Icons.close, color: Theme.of(context).hintColor, size: 28),
                 ),
               ),
               const SizedBox(height: 8),
@@ -349,14 +349,14 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
               Text(
                 "Great job! Well done on finishing your run. Let's just confirm you're done so we don't end it early.",
                 textAlign: TextAlign.center,
-                style: GoogleFonts.inter(color: Colors.white.withOpacity(0.9), fontSize: 14),
+                style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.9), fontSize: 14),
               ),
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.radarCyan,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Colors.black,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
@@ -380,9 +380,9 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
                 child: Text(
                   'Discard run',
                   style: GoogleFonts.inter(
-                    color: AppColors.textMuted,
+                    color: Theme.of(context).hintColor,
                     decoration: TextDecoration.underline,
-                    decorationColor: AppColors.textMuted,
+                    decorationColor: Theme.of(context).hintColor,
                     fontSize: 14,
                   ),
                 ),
@@ -415,7 +415,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
     _clearMapPolyline();
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -440,7 +440,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
-                  const Icon(Icons.history, color: AppColors.radarCyan),
+                  Icon(Icons.history, color: Theme.of(context).colorScheme.primary),
                   const SizedBox(width: 10),
                   Text(
                     'RUN HISTORY',
@@ -461,7 +461,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.directions_run, color: AppColors.textMuted, size: 48),
+                          Icon(Icons.directions_run, color: Theme.of(context).hintColor, size: 48),
                           const SizedBox(height: 12),
                           Text(
                             'No runs yet',
@@ -470,7 +470,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
                           const SizedBox(height: 6),
                           Text(
                             'Complete a run to see it here.',
-                            style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 14),
+                            style: GoogleFonts.inter(color: Theme.of(context).hintColor, fontSize: 14),
                           ),
                         ],
                       ),
@@ -515,9 +515,9 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
         return await showDialog<bool>(
           context: context,
           builder: (ctx) => AlertDialog(
-            backgroundColor: AppColors.surfaceCardSolid,
+            backgroundColor: Theme.of(context).cardColor,
             title: Text('Delete Run', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold)),
-            content: Text('Are you sure you want to delete this run? This will also remove the RP earned.', style: GoogleFonts.inter(color: AppColors.textMuted)),
+            content: Text('Are you sure you want to delete this run? This will also remove the RP earned.', style: GoogleFonts.inter(color: Theme.of(context).hintColor)),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(false),
@@ -550,7 +550,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.surfaceCardSolid,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: Colors.white10),
         ),
@@ -560,14 +560,14 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
           Container(
             width: 36, height: 36,
             decoration: BoxDecoration(
-              color: AppColors.radarCyan.withOpacity(0.15),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
             child: Text(
               '#${index + 1}',
               style: GoogleFonts.orbitron(
-                color: AppColors.radarCyan, fontSize: 12, fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary, fontSize: 12, fontWeight: FontWeight.bold,
               ),
             ),
           ),
@@ -581,7 +581,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
                 Text(
                   '$dateStr  •  $timeStr',
                   style: GoogleFonts.inter(
-                    color: AppColors.textMuted, fontSize: 12,
+                    color: Theme.of(context).hintColor, fontSize: 12,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -596,12 +596,12 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
                     const SizedBox(width: 12),
                     Text(
                       durationStr,
-                      style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 13),
+                      style: GoogleFonts.inter(color: Theme.of(context).hintColor, fontSize: 13),
                     ),
                     const SizedBox(width: 12),
                     Text(
                       '${_formatPace(run.averagePaceMinPerKm)} /km',
-                      style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 13),
+                      style: GoogleFonts.inter(color: Theme.of(context).hintColor, fontSize: 13),
                     ),
                   ],
                 ),
@@ -619,18 +619,18 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.radarCyan.withOpacity(0.5)),
+                  border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.map, color: AppColors.radarCyan, size: 14),
+                    Icon(Icons.map, color: Theme.of(context).colorScheme.primary, size: 14),
                     const SizedBox(width: 4),
                     Text(
                       'View',
                       style: GoogleFonts.inter(
-                        color: AppColors.radarCyan, fontSize: 12, fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary, fontSize: 12, fontWeight: FontWeight.bold,
                       ),
                     ),
                   ],
@@ -656,7 +656,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
 
     await _polylineManager!.create(PolylineAnnotationOptions(
       geometry: LineString(coordinates: coords),
-      lineColor: AppColors.radarCyan.value,
+      lineColor: AppColors.territoryOwn.toARGB32(),
       lineWidth: 4.0,
       lineOpacity: 0.9,
     ));
@@ -682,7 +682,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           // Full-screen map
@@ -705,9 +705,9 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
                 width: 44, height: 44,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.surfaceCardSolid.withOpacity(0.9),
-                  boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6)],
-                  border: Border.all(color: AppColors.radarCyan.withOpacity(0.3)),
+                  color: Theme.of(context).cardColor.withValues(alpha: 0.9),
+                  boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)],
+                  border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
                 ),
                 child: Stack(
                   alignment: Alignment.center,
@@ -721,8 +721,8 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
                           top: 6, right: 6,
                           child: Container(
                             width: 14, height: 14,
-                            decoration: const BoxDecoration(
-                              color: AppColors.crimson,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.error,
                               shape: BoxShape.circle,
                             ),
                             alignment: Alignment.center,
@@ -748,7 +748,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
               onTap: _locateMe,
               child: Container(
                 width: 44, height: 44,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   shape: BoxShape.circle,
                   color: Colors.white,
                   boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6)],
@@ -804,9 +804,9 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surfaceDark,
+        color: Theme.of(context).scaffoldBackgroundColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 20, offset: const Offset(0, -4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 20, offset: const Offset(0, -4))],
       ),
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
       child: Column(
@@ -834,7 +834,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
                   const SizedBox(height: 4),
                   Text(
                     'Area covered',
-                    style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 12),
+                    style: GoogleFonts.inter(color: Theme.of(context).hintColor, fontSize: 12),
                   ),
                 ],
               ),
@@ -845,8 +845,8 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
                 : (_runState == RunState.paused ? 'Capture Paused' : 'Capture in Progress'),
             style: GoogleFonts.inter(
               color: _runState == RunState.idle 
-                  ? AppColors.textMuted 
-                  : (_runState == RunState.paused ? Colors.orangeAccent : AppColors.radarCyan), 
+                  ? Theme.of(context).hintColor 
+                  : (_runState == RunState.paused ? Colors.orangeAccent : Theme.of(context).colorScheme.primary), 
               fontSize: 14, 
               fontWeight: FontWeight.bold
             ),
@@ -890,7 +890,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
           ],
         ),
         const SizedBox(height: 4),
-        Text(label, style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 12)),
+        Text(label, style: GoogleFonts.inter(color: Theme.of(context).hintColor, fontSize: 12)),
       ],
     );
   }
@@ -927,8 +927,8 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 decoration: BoxDecoration(
                   color: _isHolding && _holdAction == 'pause'
-                      ? AppColors.crimson.withOpacity(0.3)
-                      : AppColors.surfaceCardSolid,
+                      ? Theme.of(context).colorScheme.error.withValues(alpha: 0.3)
+                      : Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(28),
                   border: Border.all(color: Colors.white24),
                 ),
@@ -978,7 +978,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       decoration: BoxDecoration(
                         color: _isHolding && _holdAction == 'finish'
-                            ? AppColors.crimson
+                            ? Theme.of(context).colorScheme.error
                             : const Color(0xFF1A1A2E),
                         borderRadius: BorderRadius.circular(28),
                       ),

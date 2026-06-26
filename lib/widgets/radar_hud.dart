@@ -1,6 +1,5 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
 import '../services/location_service.dart';
 
 /// ── RadarHud ────────────────────────────────────────────────────────────────
@@ -62,24 +61,24 @@ class _RpPanelState extends State<_RpPanel> with SingleTickerProviderStateMixin 
   Widget build(BuildContext context) {
     return _HudCard(
       label: 'CURRENT RP',
+      suffix: Text(' RP', style: _suffixStyle(context),),
       child: AnimatedBuilder(
         animation: Listenable.merge([_shimmer, LocationService().runTracker]),
         builder: (context, child) {
           final currentRP = LocationService().runTracker.currentRP;
           return ShaderMask(
             shaderCallback: (bounds) {
-              return AppColors.shimmerGradient(_shimmer.value)
+              return const LinearGradient(colors: [Colors.transparent, Colors.white24, Colors.transparent])
                   .createShader(bounds);
             },
             blendMode: BlendMode.srcATop,
             child: Text(
               currentRP.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},'),
-              style: _valueStyle,
+              style: _valueStyle(context),
             ),
           );
         },
       ),
-      suffix: Text(' RP', style: _suffixStyle),
     );
   }
 }
@@ -114,6 +113,7 @@ class _PacePanelState extends State<_PacePanel>
   Widget build(BuildContext context) {
     return _HudCard(
       label: 'PACE',
+      suffix: Text(' /km', style: _suffixStyle(context),),
       child: AnimatedBuilder(
         animation: Listenable.merge([_pulse, LocationService().runTracker]),
         builder: (context, child) {
@@ -131,17 +131,16 @@ class _PacePanelState extends State<_PacePanel>
             decoration: BoxDecoration(
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.radarCyan.withOpacity(glowOpacity * 0.4),
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: glowOpacity * 0.4),
                   blurRadius: 12,
                   spreadRadius: 1,
                 ),
               ],
             ),
-            child: Text(paceStr, style: _valueStyle),
+            child: Text(paceStr, style: _valueStyle(context),),
           );
         },
       ),
-      suffix: Text(' /km', style: _suffixStyle),
     );
   }
 }
@@ -194,7 +193,7 @@ class _WantedPanelState extends State<_WantedPanel>
                   child: filled
                       ? ShaderMask(
                           shaderCallback: (bounds) =>
-                              AppColors.crimsonToOrange.createShader(bounds),
+                              LinearGradient(colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.primary]).createShader(bounds),
                           child: const Icon(
                             Icons.star_rounded,
                             size: 16,
@@ -204,7 +203,7 @@ class _WantedPanelState extends State<_WantedPanel>
                       : Icon(
                           Icons.star_outline_rounded,
                           size: 16,
-                          color: AppColors.textMuted.withValues(alpha: 0.4),
+                          color: Theme.of(context).hintColor.withValues(alpha: 0.4),
                         ),
                 );
               }),
@@ -234,7 +233,7 @@ class _HudCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      painter: _CircuitBorderPainter(),
+      painter: _CircuitBorderPainter(Theme.of(context).colorScheme.primary),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
         child: BackdropFilter(
@@ -242,10 +241,10 @@ class _HudCard extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
             decoration: BoxDecoration(
-              color: AppColors.surfaceCard,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: AppColors.radarCyan.withValues(alpha: 0.15),
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
                 width: 1,
               ),
             ),
@@ -256,11 +255,11 @@ class _HudCard extends StatelessWidget {
                 // Label row
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Orbitron',
                     fontSize: 9,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.textCyanMuted,
+                    color: Theme.of(context).hintColor,
                     letterSpacing: 1.5,
                   ),
                 ),
@@ -290,15 +289,17 @@ class _HudCard extends StatelessWidget {
 
 /// Draws faint grid lines and corner tick marks for a sci-fi cockpit feel.
 class _CircuitBorderPainter extends CustomPainter {
+  final Color primaryColor;
+  _CircuitBorderPainter(this.primaryColor);
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = AppColors.radarCyan.withValues(alpha: 0.07)
+      ..color = primaryColor.withValues(alpha: 0.07)
       ..strokeWidth = 0.5
       ..style = PaintingStyle.stroke;
 
     final tickPaint = Paint()
-      ..color = AppColors.radarCyan.withValues(alpha: 0.25)
+      ..color = primaryColor.withValues(alpha: 0.25)
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
 
@@ -336,7 +337,7 @@ class _CircuitBorderPainter extends CustomPainter {
 
     // ── Small crosshair dots at grid intersections (sparse) ────────────────
     final dotPaint = Paint()
-      ..color = AppColors.radarCyan.withValues(alpha: 0.12)
+      ..color = primaryColor.withValues(alpha: 0.12)
       ..style = PaintingStyle.fill;
 
     for (double x = gridSpacing * 3; x < size.width; x += gridSpacing * 3) {
@@ -354,20 +355,20 @@ class _CircuitBorderPainter extends CustomPainter {
 //  TEXT STYLES
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const TextStyle _valueStyle = TextStyle(
+TextStyle _valueStyle(BuildContext context) => TextStyle(
   fontFamily: 'Orbitron',
   fontSize: 16,
   fontWeight: FontWeight.w700,
-  color: AppColors.textPrimary,
+  color: Theme.of(context).colorScheme.onSurface,
   shadows: [
-    Shadow(color: AppColors.radarCyan, blurRadius: 6),
+    Shadow(color: Theme.of(context).colorScheme.primary, blurRadius: 6),
   ],
 );
 
-const TextStyle _suffixStyle = TextStyle(
+TextStyle _suffixStyle(BuildContext context) => TextStyle(
   fontFamily: 'Orbitron',
   fontSize: 10,
   fontWeight: FontWeight.w500,
-  color: AppColors.textCyanMuted,
+  color: Theme.of(context).hintColor,
 );
 

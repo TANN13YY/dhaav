@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../theme/app_colors.dart';
 import 'profile_settings_sheet.dart';
 import 'notifications_dialog.dart';
 
@@ -56,7 +55,7 @@ class HomeMapOverlay extends StatelessWidget {
               left: 16,
               child: Stack(
                 children: [
-                  _buildIconButton(
+                  _buildIconButton(context, 
                     icon: Icons.notifications_none,
                     onTap: () {
                       HapticFeedback.lightImpact();
@@ -94,14 +93,14 @@ class HomeMapOverlay extends StatelessWidget {
                   height: 48,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.radarCyan.withOpacity(0.5), width: 2),
-                    color: AppColors.surfaceCardSolid,
+                    border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5), width: 2),
+                    color: Theme.of(context).cardColor,
                   ),
                   child: Center(
                     child: Text(
                       initials,
                       style: GoogleFonts.orbitron(
-                        color: AppColors.radarCyan,
+                        color: Theme.of(context).colorScheme.primary,
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                       ),
@@ -115,10 +114,10 @@ class HomeMapOverlay extends StatelessWidget {
             Positioned(
               right: 16,
               bottom: 24, // Sit just above the bottom nav bar
-              child: _buildIconButton(
+              child: _buildIconButton(context, 
                 icon: Icons.my_location,
                 onTap: onLocateMe,
-                color: AppColors.radarCyan,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
           ],
@@ -127,18 +126,18 @@ class HomeMapOverlay extends StatelessWidget {
     );
   }
 
-  Widget _buildIconButton({required IconData icon, required VoidCallback onTap, Color color = Colors.white}) {
+  Widget _buildIconButton(context, {required IconData icon, required VoidCallback onTap, Color color = Colors.white}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 48,
         height: 48,
         decoration: BoxDecoration(
-          color: AppColors.surfaceCardSolid.withOpacity(0.9),
+          color: Theme.of(context).cardColor.withValues(alpha: 0.9),
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),

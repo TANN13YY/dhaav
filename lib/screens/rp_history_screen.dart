@@ -6,7 +6,7 @@ import '../services/run_tracker.dart';
 import '../theme/app_colors.dart';
 
 class RPHistoryScreen extends StatefulWidget {
-  const RPHistoryScreen({Key? key}) : super(key: key);
+  const RPHistoryScreen({super.key});
 
   @override
   State<RPHistoryScreen> createState() => _RPHistoryScreenState();
@@ -48,9 +48,9 @@ class _RPHistoryScreenState extends State<RPHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         title: Text(
           'RP HISTORY',
@@ -61,13 +61,13 @@ class _RPHistoryScreenState extends State<RPHistoryScreen> {
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.amber))
+          ? const Center(child: CircularProgressIndicator(color: AppColors.gold))
           : _rpRuns.isEmpty
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.stars, color: AppColors.textMuted, size: 48),
+                      Icon(Icons.stars, color: Theme.of(context).hintColor, size: 48),
                       const SizedBox(height: 16),
                       Text(
                         'No RP earned yet',
@@ -80,7 +80,7 @@ class _RPHistoryScreenState extends State<RPHistoryScreen> {
                       const SizedBox(height: 8),
                       Text(
                         'Complete a run to start earning RP!',
-                        style: GoogleFonts.inter(color: AppColors.textMuted),
+                        style: GoogleFonts.inter(color: Theme.of(context).hintColor),
                       ),
                     ],
                   ),
@@ -96,9 +96,9 @@ class _RPHistoryScreenState extends State<RPHistoryScreen> {
                       margin: const EdgeInsets.only(bottom: 12),
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppColors.surfaceCardSolid,
+                        color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.amber.withOpacity(0.2)),
+                        border: Border.all(color: AppColors.gold.withValues(alpha: 0.2)),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -109,7 +109,7 @@ class _RPHistoryScreenState extends State<RPHistoryScreen> {
                               Text(
                                 dateStr,
                                 style: GoogleFonts.inter(
-                                  color: AppColors.textMuted,
+                                  color: Theme.of(context).hintColor,
                                   fontSize: 12,
                                 ),
                               ),
@@ -131,13 +131,13 @@ class _RPHistoryScreenState extends State<RPHistoryScreen> {
                               Text(
                                 '+${run.totalRP}',
                                 style: GoogleFonts.orbitron(
-                                  color: AppColors.amber,
+                                  color: AppColors.gold,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 20,
                                 ),
                               ),
                               const SizedBox(width: 4),
-                              const Icon(Icons.stars, color: AppColors.amber, size: 16),
+                              const Icon(Icons.stars, color: AppColors.gold, size: 16),
                             ],
                           ),
                         ],

@@ -6,7 +6,7 @@ import '../models/battle_event.dart';
 import '../theme/app_colors.dart';
 
 class LocalBattlesScreen extends StatefulWidget {
-  const LocalBattlesScreen({Key? key}) : super(key: key);
+  const LocalBattlesScreen({super.key});
 
   @override
   State<LocalBattlesScreen> createState() => _LocalBattlesScreenState();
@@ -55,9 +55,9 @@ class _LocalBattlesScreenState extends State<LocalBattlesScreen> {
     final uid = FirebaseAuth.instance.currentUser?.uid;
 
     return Scaffold(
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         title: Text(
           'LOCAL BATTLES',
@@ -68,13 +68,13 @@ class _LocalBattlesScreenState extends State<LocalBattlesScreen> {
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.radarCyan))
+          ? Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary))
           : _battles.isEmpty
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.local_fire_department, color: AppColors.textMuted, size: 48),
+                      Icon(Icons.local_fire_department, color: Theme.of(context).hintColor, size: 48),
                       const SizedBox(height: 16),
                       Text(
                         'No local battles yet',
@@ -90,7 +90,7 @@ class _LocalBattlesScreenState extends State<LocalBattlesScreen> {
                         child: Text(
                           "Once you capture an area that overlaps with another runner, it will show up here.",
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(color: AppColors.textMuted),
+                          style: GoogleFonts.inter(color: Theme.of(context).hintColor),
                         ),
                       ),
                     ],
@@ -106,16 +106,16 @@ class _LocalBattlesScreenState extends State<LocalBattlesScreen> {
                     final dateStr = '${battle.timestamp.day}/${battle.timestamp.month}/${battle.timestamp.year}';
                     
                     final title = isAttacker ? 'You captured territory!' : 'Territory stolen!';
-                    final color = isAttacker ? AppColors.radarCyan : AppColors.errorRed;
+                    final color = isAttacker ? Theme.of(context).colorScheme.primary : AppColors.errorRed;
                     final icon = isAttacker ? Icons.arrow_upward : Icons.arrow_downward;
 
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppColors.surfaceCardSolid,
+                        color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: color.withOpacity(0.3)),
+                        border: Border.all(color: color.withValues(alpha: 0.3)),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -126,7 +126,7 @@ class _LocalBattlesScreenState extends State<LocalBattlesScreen> {
                               Text(
                                 '$dateStr  •  ${battle.locationName}',
                                 style: GoogleFonts.inter(
-                                  color: AppColors.textMuted,
+                                  color: Theme.of(context).hintColor,
                                   fontSize: 12,
                                 ),
                               ),

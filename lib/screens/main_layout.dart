@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../theme/app_colors.dart';
 import 'map_radar_screen.dart';
 import 'leaderboard_screen.dart';
 import 'run_screen.dart';
@@ -43,8 +42,8 @@ class _MainLayoutState extends State<MainLayout> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: AppColors.surfaceDark,
       body: IndexedStack(
         index: _currentIndex,
         children: _screens,
@@ -53,17 +52,17 @@ class _MainLayoutState extends State<MainLayout> {
         decoration: BoxDecoration(
           border: Border(
             top: BorderSide(
-              color: AppColors.radarCyanDim.withOpacity(0.3),
-              width: 1.0,
+              color: theme.dividerColor,
+              width: 0.5,
             ),
           ),
         ),
         child: BottomNavigationBar(
-          backgroundColor: AppColors.surfaceCardSolid,
+          backgroundColor: theme.bottomNavigationBarTheme.backgroundColor,
           currentIndex: _currentIndex,
           onTap: _onTabTapped,
-          selectedItemColor: AppColors.radarCyan,
-          unselectedItemColor: AppColors.textMuted,
+          selectedItemColor: theme.bottomNavigationBarTheme.selectedItemColor,
+          unselectedItemColor: theme.bottomNavigationBarTheme.unselectedItemColor,
           showUnselectedLabels: true,
           type: BottomNavigationBarType.fixed,
           items: const [

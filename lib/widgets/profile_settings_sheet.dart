@@ -11,7 +11,7 @@ import '../screens/run_screen.dart';
 void showProfileSettingsSheet(BuildContext context, {required VoidCallback onNavigateToMe}) {
   showModalBottomSheet(
     context: context,
-    backgroundColor: AppColors.surfaceDark,
+    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
     isScrollControlled: true,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -125,10 +125,10 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
                   children: [
                     CircleAvatar(
                       radius: 24,
-                      backgroundColor: AppColors.surfaceCardSolid,
+                      backgroundColor: Theme.of(context).cardColor,
                       child: Text(
                         initials,
-                        style: GoogleFonts.orbitron(fontSize: 14, color: AppColors.radarCyan),
+                        style: GoogleFonts.orbitron(fontSize: 14, color: Theme.of(context).colorScheme.primary),
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -281,9 +281,9 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
       color: Colors.transparent,
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(vertical: 4),
-        leading: Icon(icon, color: AppColors.textMuted),
+        leading: Icon(icon, color: Theme.of(context).hintColor),
         title: Text(label, style: GoogleFonts.inter(color: Colors.white, fontSize: 15)),
-        trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
+        trailing: Icon(Icons.chevron_right, color: Theme.of(context).hintColor),
         onTap: () {
           HapticFeedback.lightImpact();
           onTap();
@@ -305,12 +305,12 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
           color: Colors.transparent,
           child: ListTile(
             contentPadding: const EdgeInsets.symmetric(vertical: 4),
-            leading: Icon(icon, color: expanded ? Colors.white : AppColors.textMuted),
+            leading: Icon(icon, color: expanded ? Colors.white : Theme.of(context).hintColor),
             title: Text(label, style: GoogleFonts.inter(color: Colors.white, fontWeight: expanded ? FontWeight.bold : FontWeight.normal, fontSize: 15)),
             trailing: AnimatedRotation(
               turns: expanded ? 0.5 : 0,
               duration: const Duration(milliseconds: 200),
-              child: const Icon(Icons.keyboard_arrow_down, color: AppColors.textMuted),
+              child: Icon(Icons.keyboard_arrow_down, color: Theme.of(context).hintColor),
             ),
             onTap: () {
               HapticFeedback.lightImpact();
@@ -323,7 +323,7 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
           secondChild: Container(
             margin: const EdgeInsets.only(left: 16, bottom: 8),
             decoration: BoxDecoration(
-              color: AppColors.surfaceCardSolid,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(children: children),
@@ -340,7 +340,7 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
       color: Colors.transparent,
       child: ListTile(
         title: Text(title, style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-        subtitle: Text(subtitle, style: GoogleFonts.inter(color: AppColors.radarCyan, fontSize: 12)),
+        subtitle: Text(subtitle, style: GoogleFonts.inter(color: Theme.of(context).colorScheme.primary, fontSize: 12)),
         onTap: onTap,
       ),
     );
@@ -350,9 +350,9 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
     return Material(
       color: Colors.transparent,
       child: ListTile(
-        leading: Icon(icon, color: AppColors.textMuted, size: 20),
+        leading: Icon(icon, color: Theme.of(context).hintColor, size: 20),
         title: Text(label, style: GoogleFonts.inter(color: Colors.white, fontSize: 14)),
-        trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted, size: 18),
+        trailing: Icon(Icons.chevron_right, color: Theme.of(context).hintColor, size: 18),
         onTap: onTap,
       ),
     );
@@ -364,14 +364,14 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
     showDialog(
       context: ctx,
       builder: (dialogCtx) => AlertDialog(
-        backgroundColor: AppColors.surfaceDark,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: AppColors.radarCyan)),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Theme.of(context).colorScheme.primary)),
         title: Text('Manage Notifications', style: GoogleFonts.orbitron(color: Colors.white, fontSize: 16)),
         content: Material(color: Colors.transparent, child: _NotificationSettingsBody()),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogCtx).pop(),
-            child: const Text('Done', style: TextStyle(color: AppColors.radarCyan)),
+            child: Text('Done', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
           ),
         ],
       ),
@@ -382,14 +382,14 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
     showDialog(
       context: ctx,
       builder: (dialogCtx) => AlertDialog(
-        backgroundColor: AppColors.surfaceDark,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: AppColors.radarCyan)),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Theme.of(context).colorScheme.primary)),
         title: Text('Units & Measurement', style: GoogleFonts.orbitron(color: Colors.white, fontSize: 16)),
         content: Material(color: Colors.transparent, child: _UnitSettingsBody()),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogCtx).pop(),
-            child: const Text('Done', style: TextStyle(color: AppColors.radarCyan)),
+            child: Text('Done', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
           ),
         ],
       ),
@@ -400,7 +400,7 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
     showDialog(
       context: ctx,
       builder: (dialogCtx) => AlertDialog(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: AppColors.errorRed)),
         title: Text('Delete Account Data', style: GoogleFonts.orbitron(color: AppColors.errorRed, fontSize: 16)),
         content: const Text(
@@ -408,7 +408,7 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
           style: TextStyle(color: Colors.white70),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(dialogCtx).pop(), child: const Text('Cancel', style: TextStyle(color: AppColors.textMuted))),
+          TextButton(onPressed: () => Navigator.of(dialogCtx).pop(), child: Text('Cancel', style: TextStyle(color: Theme.of(context).hintColor))),
           TextButton(
             onPressed: () async {
               Navigator.of(dialogCtx).pop();
@@ -472,9 +472,9 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
     showDialog(
       context: ctx,
       builder: (dialogCtx) => AlertDialog(
-        backgroundColor: AppColors.surfaceDark,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: AppColors.violet)),
-        title: Text(newAnonymousState ? 'Go Anonymous' : 'Become Visible', style: GoogleFonts.orbitron(color: AppColors.violet, fontSize: 16)),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Theme.of(context).colorScheme.secondary)),
+        title: Text(newAnonymousState ? 'Go Anonymous' : 'Become Visible', style: GoogleFonts.orbitron(color: Theme.of(context).colorScheme.secondary, fontSize: 16)),
         content: Text(
           newAnonymousState 
               ? 'Your profile will be hidden from all leaderboards. Other players will not be able to see you. You can undo this anytime.'
@@ -482,7 +482,7 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
           style: const TextStyle(color: Colors.white70),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(dialogCtx).pop(), child: const Text('Cancel', style: TextStyle(color: AppColors.textMuted))),
+          TextButton(onPressed: () => Navigator.of(dialogCtx).pop(), child: Text('Cancel', style: TextStyle(color: Theme.of(context).hintColor))),
           TextButton(
             onPressed: () {
               _setAnonymousState(newAnonymousState);
@@ -491,7 +491,7 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
                 content: Text(newAnonymousState ? 'You are now anonymous.' : 'You are now visible.')
               ));
             },
-            child: Text(newAnonymousState ? 'Go Anonymous' : 'Become Visible', style: const TextStyle(color: AppColors.violet, fontWeight: FontWeight.bold)),
+            child: Text(newAnonymousState ? 'Go Anonymous' : 'Become Visible', style: TextStyle(color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -502,7 +502,7 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
     showDialog(
       context: ctx,
       builder: (dialogCtx) => AlertDialog(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: AppColors.errorRed)),
         title: Text('DELETE ACCOUNT', style: GoogleFonts.orbitron(color: AppColors.errorRed, fontSize: 16)),
         content: const Text(
@@ -510,7 +510,7 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
           style: TextStyle(color: Colors.white70),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(dialogCtx).pop(), child: const Text('Cancel', style: TextStyle(color: AppColors.textMuted))),
+          TextButton(onPressed: () => Navigator.of(dialogCtx).pop(), child: Text('Cancel', style: TextStyle(color: Theme.of(context).hintColor))),
           TextButton(
             onPressed: () async {
               Navigator.of(dialogCtx).pop();
@@ -603,9 +603,9 @@ class _NotificationSettingsBodyState extends State<_NotificationSettingsBody> {
   Widget _buildSwitch(String title, String subtitle, bool value, Function(bool) onChanged) {
     return SwitchListTile(
       contentPadding: EdgeInsets.zero,
-      activeColor: AppColors.radarCyan,
+      activeThumbColor: Theme.of(context).colorScheme.primary,
       title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
-      subtitle: Text(subtitle, style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+      subtitle: Text(subtitle, style: TextStyle(color: Theme.of(context).hintColor, fontSize: 11)),
       value: value,
       onChanged: onChanged,
     );
@@ -657,9 +657,9 @@ class _UnitSettingsBodyState extends State<_UnitSettingsBody> {
       children: [
         RadioListTile<String>(
           contentPadding: EdgeInsets.zero,
-          activeColor: AppColors.radarCyan,
+          activeColor: Theme.of(context).colorScheme.primary,
           title: const Text('Kilometres & metres', style: TextStyle(color: Colors.white)),
-          subtitle: const Text('Metric system', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+          subtitle: Text('Metric system', style: TextStyle(color: Theme.of(context).hintColor, fontSize: 12)),
           value: 'metric',
           groupValue: _selectedUnit,
           onChanged: (v) {
@@ -669,9 +669,9 @@ class _UnitSettingsBodyState extends State<_UnitSettingsBody> {
         ),
         RadioListTile<String>(
           contentPadding: EdgeInsets.zero,
-          activeColor: AppColors.radarCyan,
+          activeColor: Theme.of(context).colorScheme.primary,
           title: const Text('Miles & feet', style: TextStyle(color: Colors.white)),
-          subtitle: const Text('Imperial system', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+          subtitle: Text('Imperial system', style: TextStyle(color: Theme.of(context).hintColor, fontSize: 12)),
           value: 'imperial',
           groupValue: _selectedUnit,
           onChanged: (v) {

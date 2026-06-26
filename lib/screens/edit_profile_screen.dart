@@ -23,17 +23,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   String _gender = 'Prefer not to say';
   Color _territoryColor = Colors.blue;
 
-  final List<Color> _colorOptions = [
+  late final List<Color> _colorOptions = [
     Colors.blue,
     Colors.red,
     Colors.green,
     Colors.purple,
     Colors.orange,
     Colors.teal,
-    AppColors.radarCyan,
-    AppColors.crimson,
-    AppColors.violet,
-    AppColors.amber,
+    Theme.of(context).colorScheme.primary,
+    Theme.of(context).colorScheme.error,
+    Theme.of(context).colorScheme.secondary,
+    AppColors.gold,
   ];
 
   @override
@@ -94,9 +94,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       lastDate: DateTime.now(),
       builder: (ctx, child) => Theme(
         data: ThemeData.dark().copyWith(
-          colorScheme: const ColorScheme.dark(
-            primary: AppColors.radarCyan,
-            surface: AppColors.surfaceDark,
+          colorScheme: ColorScheme.dark(
+            primary: Theme.of(context).colorScheme.primary,
+            surface: Theme.of(context).scaffoldBackgroundColor,
           ),
         ),
         child: child!,
@@ -110,7 +110,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void _pickGender() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -122,7 +122,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               .map((g) => ListTile(
                     title: Text(g, style: const TextStyle(color: Colors.white)),
                     trailing: _gender == g
-                        ? const Icon(Icons.check, color: AppColors.radarCyan)
+                        ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary)
                         : null,
                     onTap: () {
                       setState(() => _gender = g);
@@ -138,7 +138,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void _showColorPicker() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -165,7 +165,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     border: _territoryColor == c
                         ? Border.all(color: Colors.white, width: 3)
                         : null,
-                    boxShadow: [BoxShadow(color: c.withOpacity(0.5), blurRadius: 8)],
+                    boxShadow: [BoxShadow(color: c.withValues(alpha: 0.5), blurRadius: 8)],
                   ),
                 ),
               )).toList(),
@@ -188,7 +188,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         'username': _usernameCtrl.text,
         'dob': _dob,
         'gender': _gender,
-        'territoryColor': _territoryColor.value,
+        'territoryColor': _territoryColor.toARGB32(),
       }, SetOptions(merge: true));
     }
     if (mounted) {
@@ -199,9 +199,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        backgroundColor: AppColors.surfaceDark,
-        body: Center(child: CircularProgressIndicator(color: AppColors.radarCyan)),
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary)),
       );
     }
     
@@ -222,9 +222,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -235,7 +235,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         actions: [
           TextButton(
             onPressed: _saveProfile,
-            child: Text('Done', style: GoogleFonts.inter(color: AppColors.radarCyan, fontWeight: FontWeight.bold)),
+            child: Text('Done', style: GoogleFonts.inter(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -261,10 +261,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       }
                       return CircleAvatar(
                         radius: 48,
-                        backgroundColor: AppColors.surfaceCardSolid,
+                        backgroundColor: Theme.of(context).cardColor,
                         child: Text(
                           liveInitials,
-                          style: GoogleFonts.orbitron(fontSize: 28, color: AppColors.radarCyan),
+                          style: GoogleFonts.orbitron(fontSize: 28, color: Theme.of(context).colorScheme.primary),
                         ),
                       );
                     }
@@ -319,7 +319,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         decoration: BoxDecoration(
                           color: _territoryColor,
                           borderRadius: BorderRadius.circular(14),
-                          boxShadow: [BoxShadow(color: _territoryColor.withOpacity(0.5), blurRadius: 10)],
+                          boxShadow: [BoxShadow(color: _territoryColor.withValues(alpha: 0.5), blurRadius: 10)],
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -346,12 +346,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           border: Border.all(color: Colors.white24, style: BorderStyle.solid),
                         ),
                         alignment: Alignment.center,
-                        child: Text('No skin', style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 12)),
+                        child: Text('No skin', style: GoogleFonts.inter(color: Theme.of(context).hintColor, fontSize: 12)),
                       ),
                       const SizedBox(height: 16),
                       OutlinedButton(
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: AppColors.crimson),
+                          side: BorderSide(color: Theme.of(context).colorScheme.error),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                         ),
                         onPressed: () {
@@ -359,7 +359,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             const SnackBar(content: Text('Skin shop coming soon!')),
                           );
                         },
-                        child: Text('Change skin', style: GoogleFonts.inter(color: AppColors.crimson, fontWeight: FontWeight.bold)),
+                        child: Text('Change skin', style: GoogleFonts.inter(color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),
@@ -376,7 +376,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 12)),
+        Text(label, style: GoogleFonts.inter(color: Theme.of(context).hintColor, fontSize: 12)),
         const SizedBox(height: 4),
         TextField(
           controller: ctrl,
@@ -384,7 +384,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           decoration: InputDecoration(
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
             filled: true,
-            fillColor: AppColors.surfaceCardSolid,
+            fillColor: Theme.of(context).cardColor,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: const BorderSide(color: Colors.white12),
@@ -395,7 +395,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: AppColors.radarCyan),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
             ),
           ),
         ),
@@ -407,14 +407,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.surfaceCardSolid,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: Colors.white12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 11)),
+          Text(label, style: GoogleFonts.inter(color: Theme.of(context).hintColor, fontSize: 11)),
           const SizedBox(height: 2),
           Text(value, style: GoogleFonts.inter(color: Colors.white, fontSize: 14)),
         ],

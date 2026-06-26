@@ -3,14 +3,14 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_colors.dart';
 
 class ShopScreen extends StatelessWidget {
-  const ShopScreen({Key? key}) : super(key: key);
+  const ShopScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         title: Text(
           'DHAAV STORE',
@@ -26,7 +26,7 @@ class ShopScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.storefront, size: 80, color: AppColors.amber),
+              const Icon(Icons.storefront, size: 80, color: AppColors.gold),
               const SizedBox(height: 24),
               Text(
                 'Coming Soon',
@@ -41,7 +41,7 @@ class ShopScreen extends StatelessWidget {
                 'The store is currently empty.\nCheck back later for premium gear, avatars, and custom trails!',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
-                  color: AppColors.textMuted,
+                  color: Theme.of(context).hintColor,
                   fontSize: 16,
                   height: 1.5,
                 ),
@@ -49,8 +49,8 @@ class ShopScreen extends StatelessWidget {
               const SizedBox(height: 48),
               OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.amber,
-                  side: const BorderSide(color: AppColors.amber),
+                  foregroundColor: AppColors.gold,
+                  side: const BorderSide(color: AppColors.gold),
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 ),
                 onPressed: () => Navigator.pop(context),

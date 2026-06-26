@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -49,9 +49,9 @@ class MeScreen extends StatelessWidget {
         }
         
         return Scaffold(
-          backgroundColor: AppColors.surfaceDark,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: AppBar(
-            backgroundColor: AppColors.surfaceDark,
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             elevation: 0,
             leading: IconButton(
               icon: Stack(
@@ -96,10 +96,10 @@ class MeScreen extends StatelessWidget {
                   },
                   child: CircleAvatar(
                     radius: 16,
-                    backgroundColor: AppColors.surfaceCardSolid,
+                    backgroundColor: Theme.of(context).cardColor,
                     child: Text(
                       initials,
-                      style: GoogleFonts.orbitron(fontSize: 10, color: AppColors.radarCyan),
+                      style: GoogleFonts.orbitron(fontSize: 10, color: Theme.of(context).colorScheme.primary),
                     ),
                   ),
                 ),
@@ -113,15 +113,15 @@ class MeScreen extends StatelessWidget {
               children: [
                 _buildProfileHeader(context, displayUsername, initials, data),
                 const SizedBox(height: 32),
-                _buildSectionHeader('Dhaav Store', 'Gear up and customize', Icons.storefront),
+                _buildSectionHeader(context, 'Dhaav Store', 'Gear up and customize', Icons.storefront),
                 const SizedBox(height: 16),
                 _buildShopCard(context),
                 const SizedBox(height: 32),
-                _buildSectionHeader('Local battles', 'Compete for local dominance', Icons.local_fire_department),
+                _buildSectionHeader(context, 'Local battles', 'Compete for local dominance', Icons.local_fire_department),
                 const SizedBox(height: 16),
                 _buildLocalBattlesCard(context),
                 const SizedBox(height: 32),
-                _buildSectionHeader('My Territories', 'Manage your area', Icons.map),
+                _buildSectionHeader(context, 'My Territories', 'Manage your area', Icons.map),
                 const SizedBox(height: 16),
                 _buildTerritoriesCard(context),
                 const SizedBox(height: 48),
@@ -145,10 +145,10 @@ class MeScreen extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 28,
-              backgroundColor: AppColors.surfaceCardSolid,
+              backgroundColor: Theme.of(context).cardColor,
               child: Text(
                 initials,
-                style: GoogleFonts.orbitron(fontSize: 18, color: AppColors.radarCyan),
+                style: GoogleFonts.orbitron(fontSize: 18, color: Theme.of(context).colorScheme.primary),
               ),
             ),
             const SizedBox(width: 16),
@@ -175,24 +175,24 @@ class MeScreen extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.amber.withOpacity(0.1),
+                        color: AppColors.gold.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.stars, color: AppColors.amber, size: 16),
+                          const Icon(Icons.stars, color: AppColors.gold, size: 16),
                           const SizedBox(width: 4),
                           Text(
                             '$rpBalance RP BALANCE',
                             style: GoogleFonts.orbitron(
-                              color: AppColors.amber,
+                              color: AppColors.gold,
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                           const SizedBox(width: 4),
-                          const Icon(Icons.chevron_right, color: AppColors.amber, size: 16),
+                          const Icon(Icons.chevron_right, color: AppColors.gold, size: 16),
                         ],
                       ),
                     ),
@@ -206,14 +206,14 @@ class MeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(String title, String subtitle, IconData icon) {
+  Widget _buildSectionHeader(BuildContext context, String title, String subtitle, IconData icon) {
     return Row(
       children: [
         Container(
           padding: const EdgeInsets.all(8),
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: AppColors.surfaceCardSolid,
+            color: Theme.of(context).cardColor,
           ),
           child: Icon(icon, color: Colors.white, size: 20),
         ),
@@ -233,7 +233,7 @@ class MeScreen extends StatelessWidget {
               Text(
                 subtitle,
                 style: GoogleFonts.inter(
-                  color: AppColors.textMuted,
+                  color: Theme.of(context).hintColor,
                   fontSize: 12,
                 ),
               ),
@@ -248,9 +248,9 @@ class MeScreen extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.surfaceCardSolid,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.amber.withOpacity(0.3)),
+        border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,7 +258,7 @@ class MeScreen extends StatelessWidget {
           Text(
             'Spend your hard-earned RP on premium avatars, custom map trails, and exclusive gear.',
             style: GoogleFonts.inter(
-              color: AppColors.textMuted,
+              color: Theme.of(context).hintColor,
               fontSize: 14,
               height: 1.4,
             ),
@@ -268,9 +268,9 @@ class MeScreen extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.amber.withOpacity(0.1),
-                  foregroundColor: AppColors.amber,
-                  side: const BorderSide(color: AppColors.amber),
+                  backgroundColor: AppColors.gold.withValues(alpha: 0.1),
+                  foregroundColor: AppColors.gold,
+                  side: const BorderSide(color: AppColors.gold),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
@@ -300,7 +300,7 @@ class MeScreen extends StatelessWidget {
         width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
       decoration: BoxDecoration(
-        color: AppColors.surfaceCardSolid,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -319,7 +319,7 @@ class MeScreen extends StatelessWidget {
             "Once you capture an area that overlaps with another runner, it will show up here.",
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
-              color: AppColors.textMuted,
+              color: Theme.of(context).hintColor,
               fontSize: 14,
             ),
           ),
@@ -338,13 +338,13 @@ class MeScreen extends StatelessWidget {
         width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
       decoration: BoxDecoration(
-        color: AppColors.surfaceCardSolid,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.map, color: AppColors.textMuted, size: 32),
+          Icon(Icons.map, color: Theme.of(context).hintColor, size: 32),
           const SizedBox(height: 16),
           Text(
             'No territory captured yet',
@@ -359,7 +359,7 @@ class MeScreen extends StatelessWidget {
             "Complete runs to capture areas in your city. Your empire begins here.",
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
-              color: AppColors.textMuted,
+              color: Theme.of(context).hintColor,
               fontSize: 14,
             ),
           ),

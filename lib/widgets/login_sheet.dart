@@ -1,6 +1,5 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
 import '../services/auth_service.dart';
 
 /// ── LoginSheet ──────────────────────────────────────────────────────────────
@@ -99,7 +98,7 @@ class _LoginSheetBodyState extends State<_LoginSheetBody>
       child: FractionallySizedBox(
         heightFactor: 0.72,
         child: CustomPaint(
-          painter: _SheetCircuitPainter(),
+          painter: _SheetCircuitPainter(Theme.of(context).colorScheme.primary),
           child: ClipRRect(
             borderRadius:
                 const BorderRadius.vertical(top: Radius.circular(24)),
@@ -107,14 +106,14 @@ class _LoginSheetBodyState extends State<_LoginSheetBody>
               filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
               child: Container(
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceDark.withValues(alpha: 0.92),
+                  color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.92),
                   borderRadius:
                       const BorderRadius.vertical(top: Radius.circular(24)),
-                  border: const Border(
-                    top: BorderSide(color: AppColors.radarCyanDim, width: 1),
-                    left: BorderSide(color: AppColors.radarCyanDim, width: 0.5),
+                  border: Border(
+                    top: BorderSide(color: Theme.of(context).dividerColor, width: 1),
+                    left: BorderSide(color: Theme.of(context).dividerColor, width: 0.5),
                     right:
-                        BorderSide(color: AppColors.radarCyanDim, width: 0.5),
+                        BorderSide(color: Theme.of(context).dividerColor, width: 0.5),
                   ),
                 ),
                 child: SafeArea(
@@ -166,7 +165,7 @@ class _LoginSheetBodyState extends State<_LoginSheetBody>
           width: 40,
           height: 4,
           decoration: BoxDecoration(
-            color: AppColors.radarCyan.withValues(alpha: 0.3),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(2),
           ),
         ),
@@ -178,21 +177,21 @@ class _LoginSheetBodyState extends State<_LoginSheetBody>
             fontFamily: 'Orbitron',
             fontSize: 32,
             fontWeight: FontWeight.w900,
-            color: AppColors.textPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
             letterSpacing: 6,
             shadows: [
-              Shadow(color: AppColors.radarCyan.withValues(alpha: 0.8), blurRadius: 20),
-              Shadow(color: AppColors.radarCyan.withValues(alpha: 0.4), blurRadius: 40),
+              Shadow(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.8), blurRadius: 20),
+              Shadow(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4), blurRadius: 40),
             ],
           ),
         ),
         const SizedBox(height: 6),
         Text(
           _isLogin ? 'Welcome back, runner.' : 'Claim your territory.',
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'Orbitron',
             fontSize: 11,
-            color: AppColors.textCyanMuted,
+            color: Theme.of(context).hintColor,
             letterSpacing: 1.5,
           ),
         ),
@@ -204,10 +203,10 @@ class _LoginSheetBodyState extends State<_LoginSheetBody>
     return TextFormField(
       controller: _emailCtrl,
       keyboardType: TextInputType.emailAddress,
-      style: const TextStyle(
+      style: TextStyle(
         fontFamily: 'Orbitron',
         fontSize: 13,
-        color: AppColors.textPrimary,
+        color: Theme.of(context).colorScheme.onSurface,
       ),
       decoration: _inputDecoration('EMAIL ADDRESS'),
       validator: (v) {
@@ -222,10 +221,10 @@ class _LoginSheetBodyState extends State<_LoginSheetBody>
     return TextFormField(
       controller: _passwordCtrl,
       obscureText: true,
-      style: const TextStyle(
+      style: TextStyle(
         fontFamily: 'Orbitron',
         fontSize: 13,
-        color: AppColors.textPrimary,
+        color: Theme.of(context).colorScheme.onSurface,
       ),
       decoration: _inputDecoration('PASSWORD'),
       validator: (v) {
@@ -249,8 +248,8 @@ class _LoginSheetBodyState extends State<_LoginSheetBody>
       },
       child: Row(
         children: [
-          const Icon(Icons.error_outline_rounded,
-              size: 14, color: AppColors.crimson),
+          Icon(Icons.error_outline_rounded,
+              size: 14, color: Theme.of(context).colorScheme.error),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
@@ -258,7 +257,7 @@ class _LoginSheetBodyState extends State<_LoginSheetBody>
               style: TextStyle(
                 fontFamily: 'Orbitron',
                 fontSize: 10,
-                color: AppColors.crimson.withValues(alpha: 0.9),
+                color: Theme.of(context).colorScheme.error.withValues(alpha: 0.9),
               ),
             ),
           ),
@@ -275,11 +274,11 @@ class _LoginSheetBodyState extends State<_LoginSheetBody>
           width: double.infinity,
           height: 50,
           decoration: BoxDecoration(
-            gradient: _isLogin ? AppColors.loginButton : AppColors.signUpButton,
+            gradient: _isLogin ? LinearGradient(colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.primary]) : LinearGradient(colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.primary]),
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: (_isLogin ? AppColors.radarCyan : AppColors.crimson)
+                color: (_isLogin ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.error)
                     .withValues(alpha: 0.3),
                 blurRadius: 16,
                 offset: const Offset(0, 4),
@@ -293,7 +292,7 @@ class _LoginSheetBodyState extends State<_LoginSheetBody>
               onTap: _loading ? null : _submitEmail,
               child: ShaderMask(
                 shaderCallback: (bounds) =>
-                    AppColors.shimmerGradient(_shimmer.value)
+                    const LinearGradient(colors: [Colors.transparent, Colors.white24, Colors.transparent])
                         .createShader(bounds),
                 blendMode: BlendMode.srcATop,
                 child: Center(
@@ -335,20 +334,20 @@ class _LoginSheetBodyState extends State<_LoginSheetBody>
               gradient: LinearGradient(
                 colors: [
                   Colors.transparent,
-                  AppColors.radarCyan.withValues(alpha: 0.3),
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                 ],
               ),
             ),
           ),
         ),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 12),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Text(
             'OR',
             style: TextStyle(
               fontFamily: 'Orbitron',
               fontSize: 10,
-              color: AppColors.textMuted,
+              color: Theme.of(context).hintColor,
               letterSpacing: 2,
             ),
           ),
@@ -359,7 +358,7 @@ class _LoginSheetBodyState extends State<_LoginSheetBody>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  AppColors.radarCyan.withValues(alpha: 0.3),
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                   Colors.transparent,
                 ],
               ),
@@ -378,29 +377,29 @@ class _LoginSheetBodyState extends State<_LoginSheetBody>
         onPressed: _loading ? null : _submitGoogle,
         style: OutlinedButton.styleFrom(
           side: BorderSide(
-            color: AppColors.radarCyan.withValues(alpha: 0.4),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
             width: 1,
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          backgroundColor: AppColors.surfaceCardSolid.withValues(alpha: 0.5),
+          backgroundColor: Theme.of(context).cardColor.withValues(alpha: 0.5),
         ),
-        icon: const Text(
+        icon: Text(
           'G',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
-        label: const Text(
+        label: Text(
           'SIGN IN WITH GOOGLE',
           style: TextStyle(
             fontFamily: 'Orbitron',
             fontSize: 11,
             fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
             letterSpacing: 1.5,
           ),
         ),
@@ -416,10 +415,10 @@ class _LoginSheetBodyState extends State<_LoginSheetBody>
       }),
       child: RichText(
         text: TextSpan(
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'Orbitron',
             fontSize: 10,
-            color: AppColors.textMuted,
+            color: Theme.of(context).hintColor,
           ),
           children: [
             TextSpan(
@@ -428,8 +427,8 @@ class _LoginSheetBodyState extends State<_LoginSheetBody>
             ),
             TextSpan(
               text: _isLogin ? 'Sign up' : 'Log in',
-              style: const TextStyle(
-                color: AppColors.radarCyan,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -444,30 +443,30 @@ class _LoginSheetBodyState extends State<_LoginSheetBody>
   InputDecoration _inputDecoration(String label) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(
+      labelStyle: TextStyle(
         fontFamily: 'Orbitron',
         fontSize: 10,
-        color: AppColors.textCyanMuted,
+        color: Theme.of(context).hintColor,
         letterSpacing: 1.5,
       ),
       enabledBorder: UnderlineInputBorder(
         borderSide: BorderSide(
-          color: AppColors.radarCyan.withValues(alpha: 0.25),
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.25),
         ),
       ),
-      focusedBorder: const UnderlineInputBorder(
-        borderSide: BorderSide(color: AppColors.radarCyan, width: 1.5),
+      focusedBorder: UnderlineInputBorder(
+        borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5),
       ),
-      errorBorder: const UnderlineInputBorder(
-        borderSide: BorderSide(color: AppColors.crimson),
+      errorBorder: UnderlineInputBorder(
+        borderSide: BorderSide(color: Theme.of(context).colorScheme.error),
       ),
-      focusedErrorBorder: const UnderlineInputBorder(
-        borderSide: BorderSide(color: AppColors.crimson, width: 1.5),
+      focusedErrorBorder: UnderlineInputBorder(
+        borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1.5),
       ),
-      errorStyle: const TextStyle(
+      errorStyle: TextStyle(
         fontFamily: 'Orbitron',
         fontSize: 9,
-        color: AppColors.crimson,
+        color: Theme.of(context).colorScheme.error,
       ),
       contentPadding: const EdgeInsets.symmetric(vertical: 12),
     );
@@ -480,10 +479,12 @@ class _LoginSheetBodyState extends State<_LoginSheetBody>
 
 /// Subtle circuit-board pattern behind the login sheet.
 class _SheetCircuitPainter extends CustomPainter {
+  final Color primaryColor;
+  _SheetCircuitPainter(this.primaryColor);
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = AppColors.radarCyan.withValues(alpha: 0.04)
+      ..color = primaryColor.withValues(alpha: 0.04)
       ..strokeWidth = 0.5
       ..style = PaintingStyle.stroke;
 
@@ -497,7 +498,7 @@ class _SheetCircuitPainter extends CustomPainter {
 
     // Corner accents
     final accentPaint = Paint()
-      ..color = AppColors.radarCyan.withValues(alpha: 0.15)
+      ..color = primaryColor.withValues(alpha: 0.15)
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
 
