@@ -748,7 +748,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
               onTap: _locateMe,
               child: Container(
                 width: 44, height: 44,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: Theme.of(context).colorScheme.onSurface,
                   boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6)],
@@ -766,7 +766,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
               onTap: _handleGpsIconTap,
               child: Container(
                 width: 44, height: 44,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: Theme.of(context).colorScheme.onSurface,
                   boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6)],
