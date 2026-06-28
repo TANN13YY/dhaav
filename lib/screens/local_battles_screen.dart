@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/battle_event.dart';
 import '../theme/app_colors.dart';
+import '../services/territory_service.dart';
+import 'territory_map_screen.dart';
 
 class LocalBattlesScreen extends StatefulWidget {
   const LocalBattlesScreen({super.key});
@@ -15,6 +17,7 @@ class LocalBattlesScreen extends StatefulWidget {
 class _LocalBattlesScreenState extends State<LocalBattlesScreen> {
   bool _isLoading = true;
   List<BattleEvent> _battles = [];
+  Map<String, String> _userNames = {};
 
   @override
   void initState() {
@@ -33,14 +36,35 @@ class _LocalBattlesScreenState extends State<LocalBattlesScreen> {
       final snapshot = await FirebaseFirestore.instance
           .collection('BattleHistory')
           .where('participants', arrayContains: uid)
-          .orderBy('timestamp', descending: true)
           .get();
 
-      final battles = snapshot.docs.map((doc) => BattleEvent.fromFirestore(doc)).toList();
+      final allBattles = snapshot.docs.map((doc) => BattleEvent.fromFirestore(doc)).toList();
+      
+      // Sort locally to avoid needing a Firestore composite index
+      allBattles.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      
+      final battles = allBattles;
 
+      // Fetch opponent usernames
+      Set<String> uidsToFetch = {};
+      for (var b in battles) {
+        if (b.attackerId != uid) uidsToFetch.add(b.attackerId);
+        if (b.defenderId != uid) uidsToFetch.add(b.defenderId);
+      }
+
+      Map<String, String> fetchedNames = {};
+      for (var id in uidsToFetch) {
+        try {
+          final userDoc = await FirebaseFirestore.instance.collection('Users').doc(id).get();
+          if (userDoc.exists) {
+            fetchedNames[id] = userDoc.data()?['username'] ?? 'Unknown Runner';
+          }
+        } catch (e) {}
+      }
       if (mounted) {
         setState(() {
           _battles = battles;
+          _userNames = fetchedNames;
           _isLoading = false;
         });
       }
@@ -105,42 +129,74 @@ class _LocalBattlesScreenState extends State<LocalBattlesScreen> {
                     
                     final dateStr = '${battle.timestamp.day}/${battle.timestamp.month}/${battle.timestamp.year}';
                     
-                    final title = isAttacker ? 'You captured territory!' : 'Territory stolen!';
+                    final opponentId = isAttacker ? battle.defenderId : battle.attackerId;
+                    final opponentName = _userNames[opponentId] ?? 'Unknown Runner';
+
+                    final title = isAttacker ? 'You captured territory from $opponentName!' : '$opponentName stole territory!';
                     final color = isAttacker ? Theme.of(context).colorScheme.primary : AppColors.errorRed;
                     final icon = isAttacker ? Icons.arrow_upward : Icons.arrow_downward;
 
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).cardColor,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: color.withValues(alpha: 0.3)),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '$dateStr  •  ${battle.locationName}',
-                                style: GoogleFonts.inter(
-                                  color: Theme.of(context).hintColor,
-                                  fontSize: 12,
+                    return GestureDetector(
+                      onTap: () {
+                        if (battle.capturedCoordinates != null && battle.capturedCoordinates!.isNotEmpty) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => TerritoryMapScreen(
+                                territory: PolygonTerritory(
+                                  id: battle.id,
+                                  ownerId: battle.attackerId,
+                                  rp: battle.rpStolen,
+                                  areaSqm: battle.areaSqm,
+                                  coordinates: battle.capturedCoordinates!,
                                 ),
                               ),
-                              SizedBox(height: 6),
-                              Text(
-                                title,
-                                style: GoogleFonts.inter(
-                                  color: Theme.of(context).colorScheme.onSurface,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('No map data available for this older battle.')),
+                          );
+                        }
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardColor,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: color.withValues(alpha: 0.3)),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '$dateStr  •  ${battle.locationName}',
+                                  style: GoogleFonts.inter(
+                                    color: Theme.of(context).hintColor,
+                                    fontSize: 12,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                              ),
-                            ],
+                                const SizedBox(height: 6),
+                                Text(
+                                  title,
+                                  style: GoogleFonts.inter(
+                                    color: Theme.of(context).colorScheme.onSurface,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 2,
+                                ),
+                              ],
+                            ),
                           ),
+                          const SizedBox(width: 8),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
@@ -158,11 +214,22 @@ class _LocalBattlesScreenState extends State<LocalBattlesScreen> {
                                   ),
                                 ],
                               ),
+                              if (battle.areaSqm > 0)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Text(
+                                    '${(battle.areaSqm).toStringAsFixed(1)} m²',
+                                    style: GoogleFonts.inter(
+                                      color: Theme.of(context).hintColor,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
                             ],
                           ),
                         ],
                       ),
-                    );
+                    ));
                   },
                 ),
     );

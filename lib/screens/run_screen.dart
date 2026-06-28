@@ -11,6 +11,7 @@ import '../services/territory_service.dart';
 import '../services/run_tracker.dart';
 import '../services/run_history_service.dart';
 import '../theme/theme_manager.dart';
+import 'map_radar_screen.dart' show mapRefreshNotifier;
 
 /// Run states for the state machine
 enum RunState { idle, running, paused }
@@ -49,8 +50,9 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    ThemeManager().isDarkMode.addListener(_onThemeChanged);
     WidgetsBinding.instance.addObserver(this);
+    ThemeManager().isDarkMode.addListener(_onThemeChanged);
+    mapRefreshNotifier.addListener(_refreshMap);
     _checkPermissions();
     _checkGpsStatus();
     _loadRunHistory();
@@ -104,6 +106,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
   @override
   void dispose() {
     ThemeManager().isDarkMode.removeListener(_onThemeChanged);
+    mapRefreshNotifier.removeListener(_refreshMap);
     WidgetsBinding.instance.removeObserver(this);
     _durationTimer?.cancel();
     _holdTimer?.cancel();
@@ -115,6 +118,16 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
   void _onThemeChanged() {
     _mapboxMap?.loadStyleURI(
         ThemeManager().isDarkMode.value ? MapboxStyles.DARK : MapboxStyles.LIGHT);
+  }
+
+  Future<void> _refreshMap() async {
+    if (_mapboxMap == null) return;
+    try {
+      final pos = await geo.Geolocator.getLastKnownPosition() ?? await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.high);
+      _loadNearbyTerritories(pos.latitude, pos.longitude);
+    } catch (e) {
+      debugPrint("Error refreshing map: $e");
+    }
   }
 
   @override
@@ -143,36 +156,61 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
       enabled: true, pulsingEnabled: true,
       pulsingColor: 0xFF00F0FF, pulsingMaxRadius: 40.0,
     ));
-    _polylineManager = await map.annotations.createPolylineAnnotationManager();
-    _polygonManager = await map.annotations.createPolygonAnnotationManager();
+
+    final annotationPlugin = map.annotations;
+    _polygonManager = await annotationPlugin.createPolygonAnnotationManager();
+    _polylineManager = await annotationPlugin.createPolylineAnnotationManager();
     
     // Load initial territories based on current location
     try {
-      final pos = await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.high);
+      final pos = await geo.Geolocator.getLastKnownPosition() ?? await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.high);
+      _mapboxMap?.flyTo(
+        CameraOptions(
+          center: Point(coordinates: Position(pos.longitude, pos.latitude)),
+          zoom: 16.0,
+        ),
+        MapAnimationOptions(duration: 1000, startDelay: 0),
+      );
       _loadNearbyTerritories(pos.latitude, pos.longitude);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Location failed on start: $e');
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('GPS failed! Showing New Delhi fallback location.')));
+      _loadNearbyTerritories(28.6139, 77.2090); // Fallback
+    }
   }
 
   Future<void> _loadNearbyTerritories(double lat, double lng) async {
     if (_polygonManager == null) return;
-    final territories = await TerritoryService().getNearbyTerritories(lat, lng);
-    
-    final currentUid = FirebaseAuth.instance.currentUser?.uid;
-    
-    final polygons = territories.map((t) {
-      final isMine = t.ownerId == currentUid;
-      final coords = t.coordinates.map((p) => Position(p[1], p[0])).toList();
-      return PolygonAnnotationOptions(
-        geometry: Polygon(coordinates: [coords]),
-        fillColor: (isMine ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.error).toARGB32(),
-        fillOpacity: 0.3,
-        fillOutlineColor: (isMine ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.error).toARGB32(),
-      );
-    }).toList();
+    try {
+      final territories = await TerritoryService().getNearbyTerritories(lat, lng);
+      
+      final currentUid = FirebaseAuth.instance.currentUser?.uid;
+      
+      _polygonManager?.deleteAll();
+      if (territories.isEmpty) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Firebase returned 0 territories for the map.')));
+        return;
+      }
 
-    await _polygonManager!.deleteAll();
-    if (polygons.isNotEmpty) {
-      await _polygonManager!.createMulti(polygons);
+      List<PolygonAnnotationOptions> polygons = [];
+
+      for (var t in territories) {
+        final isMine = t.ownerId == currentUid;
+        final coords = t.coordinates.map((p) => Position(p[1], p[0])).toList();
+        
+        polygons.add(PolygonAnnotationOptions(
+          geometry: Polygon(coordinates: [coords]),
+          fillColor: (isMine ? AppColors.territoryOwn : AppColors.territoryOther).value,
+          fillOpacity: 0.3,
+          fillOutlineColor: (isMine ? AppColors.territoryOwn : AppColors.territoryOther).value,
+        ));
+      }
+      
+      await _polygonManager?.createMulti(polygons);
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Map drew ${territories.length} territories!')));
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Map Error: $e')));
+      debugPrint('Error loading nearby territories: $e');
     }
   }
 
@@ -195,7 +233,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
     }
   }
 
-  // ─── Run State Actions ──────────────────────────────────────────────────
+  // â”€â”€â”€ Run State Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   void _startRun() {
     HapticFeedback.heavyImpact();
@@ -273,7 +311,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
     setState(() => _runState = RunState.idle);
   }
 
-  // ─── Hold-to-action mechanics ───────────────────────────────────────────
+  // â”€â”€â”€ Hold-to-action mechanics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   void _startHold(String action) {
     _holdAction = action;
@@ -398,7 +436,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
     );
   }
 
-  // ─── Formatting Helpers ─────────────────────────────────────────────────
+  // â”€â”€â”€ Formatting Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   String _formatDuration(Duration d) {
     final mm = d.inMinutes.remainder(60).toString().padLeft(2, '0');
@@ -413,7 +451,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
     return '$mins:${secs.toString().padLeft(2, '0')}';
   }
 
-  // ─── History ────────────────────────────────────────────────────────────
+  // â”€â”€â”€ History â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   void _showHistory() {
     _clearMapPolyline();
@@ -583,7 +621,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$dateStr  •  $timeStr',
+                  '$dateStr  â€¢  $timeStr',
                   style: GoogleFonts.inter(
                     color: Theme.of(context).hintColor, fontSize: 12,
                   ),
@@ -660,7 +698,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
 
     await _polylineManager!.create(PolylineAnnotationOptions(
       geometry: LineString(coordinates: coords),
-      lineColor: AppColors.territoryOwn.toARGB32(),
+      lineColor: AppColors.territoryOwn.value,
       lineWidth: 4.0,
       lineOpacity: 0.9,
     ));
@@ -681,7 +719,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
     _polylineManager?.deleteAll();
   }
 
-  // ─── Build ──────────────────────────────────────────────────────────────
+  // â”€â”€â”€ Build â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   @override
   Widget build(BuildContext context) {
@@ -804,7 +842,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
     final distance = _tracker.totalDistanceKm;
     final duration = _tracker.activeDuration;
     final pace = _tracker.currentPaceMinPerKm;
-    final capturedM2 = (distance * 1000).round(); // Rough m² approximation
+    final capturedM2 = (distance * 1000).round(); // Rough sq meters approximation
 
     return Container(
       decoration: BoxDecoration(
@@ -830,7 +868,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
                       ),
                       SizedBox(width: 4),
                       Text(
-                        'm²',
+                        'sq meters',
                         style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.w900),
                       ),
                     ],

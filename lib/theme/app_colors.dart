@@ -10,7 +10,7 @@ abstract final class AppColors {
   static const Color successGreen = Color(0xFF00E676);
 
   // ── Territory colors (theme-independent) ──────────────────────────────────
-  static const Color territoryOwn = Color(0xFF00F0FF);   // Cyan — own territory
+  static const Color territoryOwn = Color(0xFF69F0AE);   // Light Green - own territory
   static const Color territoryOther = Color(0xFFFF2D55);  // Red — others' territory
 }
 

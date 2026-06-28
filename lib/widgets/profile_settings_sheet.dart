@@ -7,6 +7,9 @@ import '../theme/app_colors.dart';
 import '../theme/theme_manager.dart';
 import '../screens/edit_profile_screen.dart';
 import '../screens/run_screen.dart';
+import '../screens/map_radar_screen.dart';
+import '../services/mock_data_service.dart';
+import '../debug_helper.dart';
 
 /// Shows the profile settings bottom sheet when tapping the profile icon on the Home tab.
 void showProfileSettingsSheet(BuildContext context, {required VoidCallback onNavigateToMe}) {
@@ -88,17 +91,25 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
             ? displayUsername.substring(0, displayUsername.length >= 2 ? 2 : 1).toUpperCase() 
             : 'U';
 
+        String role = 'user';
+
         if (snapshot.hasData && snapshot.data!.data() != null) {
           final data = snapshot.data!.data() as Map<String, dynamic>;
           String firstName = data['firstName'] ?? '';
           String lastName = data['lastName'] ?? '';
+          role = data['role'] ?? 'user';
+          
+          if (firstName.trim().isNotEmpty || lastName.trim().isNotEmpty) {
+            displayUsername = '${firstName.trim()} ${lastName.trim()}'.trim();
+          } else if (data['username'] != null && data['username'].toString().trim().isNotEmpty) {
+            displayUsername = data['username'];
+          }
           
           if (firstName.trim().isNotEmpty && lastName.trim().isNotEmpty) {
             initials = '${firstName.trim()[0]}${lastName.trim()[0]}'.toUpperCase();
           } else if (firstName.trim().isNotEmpty) {
             initials = firstName.trim()[0].toUpperCase();
-          } else if (data['username'] != null && data['username'].toString().trim().isNotEmpty) {
-            displayUsername = data['username'];
+          } else {
             initials = displayUsername.substring(0, displayUsername.length >= 2 ? 2 : 1).toUpperCase();
           }
         }
@@ -251,6 +262,87 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
                 },
               ),
               Divider(color: Theme.of(context).dividerColor, height: 1),
+
+              // ---------------- Developer Options ----------------------------------
+              if (role == 'developer') ...[
+                _buildNavigationTile(
+                  icon: Icons.developer_board,
+                  label: 'Developer: Inject Mock Data',
+                  onTap: () async {
+                    
+                    final uid = FirebaseAuth.instance.currentUser?.uid;
+                    if (uid != null) {
+                      await MockDataService().generateMockData(context, uid);
+                      mapRefreshNotifier.value++;
+                    }
+                  },
+                ),
+                _buildNavigationTile(
+                  icon: Icons.delete_forever,
+                  label: 'Developer: Clear Mock Data',
+                  onTap: () async {
+                    
+                    final uid = FirebaseAuth.instance.currentUser?.uid;
+                    if (uid != null) {
+                      await MockDataService().clearMockData(context, uid);
+                      mapRefreshNotifier.value++;
+                    }
+                  },
+                ),
+                _buildNavigationTile(
+                  icon: Icons.warning_amber_rounded,
+                  label: 'Developer: Simulate Loss',
+                  onTap: () async {
+                    
+                    final uid = FirebaseAuth.instance.currentUser?.uid;
+                    if (uid != null) {
+                      await MockDataService().simulateTerritoryLoss(context, uid);
+                      mapRefreshNotifier.value++;
+                    }
+                  },
+                ),
+                _buildNavigationTile(
+                  icon: Icons.dangerous,
+                  label: 'Developer: Alpha Attack (Partial)',
+                  onTap: () async {
+                    
+                    final shape = await showDialog<String>(
+                      context: context,
+                      builder: (context) => SimpleDialog(
+                        title: const Text('Select Attack Shape'),
+                        children: [
+                          SimpleDialogOption(
+                            onPressed: () => Navigator.pop(context, 'circle'),
+                            child: const Text('Circle'),
+                          ),
+                          SimpleDialogOption(
+                            onPressed: () => Navigator.pop(context, 'figure8'),
+                            child: const Text('Figure 8 (Peanut)'),
+                          ),
+                          SimpleDialogOption(
+                            onPressed: () => Navigator.pop(context, 'star'),
+                            child: const Text('Star (Jagged Path)'),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (shape != null && context.mounted) {
+                      await MockDataService().simulateAlphaAttack(context, FirebaseAuth.instance.currentUser!.uid, shape: shape);
+                      mapRefreshNotifier.value++;
+                    }
+                  },
+                ),
+                _buildNavigationTile(
+                  icon: Icons.bug_report,
+                  label: 'Developer: Show Map Debug',
+                  onTap: () async {
+                    
+                    await DebugHelper.analyzeTerritories(context);
+                  },
+                ),
+                Divider(color: Theme.of(context).dividerColor, height: 1),
+              ],
 
               SizedBox(height: 24),
 

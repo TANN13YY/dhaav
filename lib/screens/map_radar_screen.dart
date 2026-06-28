@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart' as geo;
+import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/login_sheet.dart';
 import '../widgets/home_map_overlay.dart';
 import '../theme/theme_manager.dart';
+import '../theme/app_colors.dart';
+import '../services/territory_service.dart';
 
-/// ── MapRadarScreen ──────────────────────────────────────────────────────────
+/// Global notifier to trigger map refresh from other parts of the app
+final ValueNotifier<int> mapRefreshNotifier = ValueNotifier(0);
+
+/// ┌────────────────────────────────────────────────────────┐
 /// Full-screen dark Mapbox map with the floating HomeMapOverlay.
 /// When [showLoginOnLaunch] is true, the login bottom-sheet is triggered
 /// automatically after the first frame.
@@ -26,12 +32,15 @@ class MapRadarScreen extends StatefulWidget {
 
 class _MapRadarScreenState extends State<MapRadarScreen> {
   MapboxMap? _mapboxMap;
+  PolygonAnnotationManager? _polygonManager;
+  PointAnnotationManager? _pointManager;
   bool _loginSheetShown = false;
 
   @override
   void initState() {
     super.initState();
     ThemeManager().isDarkMode.addListener(_onThemeChanged);
+    mapRefreshNotifier.addListener(_locateMe);
     if (widget.showLoginOnLaunch) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!_loginSheetShown && mounted) {
@@ -50,6 +59,7 @@ class _MapRadarScreenState extends State<MapRadarScreen> {
   @override
   void dispose() {
     ThemeManager().isDarkMode.removeListener(_onThemeChanged);
+    mapRefreshNotifier.removeListener(_locateMe);
     super.dispose();
   }
 
@@ -81,6 +91,74 @@ class _MapRadarScreenState extends State<MapRadarScreen> {
         pulsingMaxRadius: 40.0,
       ),
     );
+
+    _initPolygonManager();
+  }
+
+  Future<void> _initPolygonManager() async {
+    final annotationPlugin = _mapboxMap!.annotations;
+    _polygonManager = await annotationPlugin.createPolygonAnnotationManager();
+    _pointManager = await annotationPlugin.createPointAnnotationManager();
+    _locateMe(); // Load initial polygons once ready
+  }
+
+  Future<void> _loadNearbyTerritories(double lat, double lng) async {
+    if (_polygonManager == null) return;
+    try {
+      final territories = await TerritoryService().getNearbyTerritories(lat, lng);
+      
+      final currentUid = FirebaseAuth.instance.currentUser?.uid;
+      
+      _polygonManager?.deleteAll();
+      _pointManager?.deleteAll();
+      if (territories.isEmpty) return;
+
+      List<PolygonAnnotationOptions> polygons = [];
+      List<PointAnnotationOptions> points = [];
+
+      for (var t in territories) {
+        final isMine = t.ownerId == currentUid;
+        final coords = t.coordinates.map((p) => Position(p[1], p[0])).toList();
+        
+        polygons.add(PolygonAnnotationOptions(
+          geometry: Polygon(coordinates: [coords]),
+          fillColor: (isMine ? AppColors.territoryOwn : AppColors.territoryOther).value,
+          fillOpacity: 0.3,
+          fillOutlineColor: (isMine ? AppColors.territoryOwn : AppColors.territoryOther).value,
+        ));
+
+        // Calculate simple center for the label
+        // Only show labels for OTHER players to avoid clustering the map with "ME"
+        if (coords.isNotEmpty && !isMine) {
+          double sumLat = 0;
+          double sumLng = 0;
+          for (var c in coords) {
+            sumLat += c.lat.toDouble();
+            sumLng += c.lng.toDouble();
+          }
+          final centerLat = sumLat / coords.length;
+          final centerLng = sumLng / coords.length;
+
+          String initials = t.ownerId.substring(0, 2).toUpperCase();
+          if (t.ownerId == 'mock_user_alpha') initials = 'A';
+          if (t.ownerId == 'mock_user_beta') initials = 'B';
+
+          points.add(PointAnnotationOptions(
+            geometry: Point(coordinates: Position(centerLng, centerLat)),
+            textField: initials,
+            textSize: 14.0,
+            textColor: Colors.white.value,
+            textHaloColor: Colors.black.value,
+            textHaloWidth: 1.5,
+          ));
+        }
+      }
+      
+      await _polygonManager?.createMulti(polygons);
+      await _pointManager?.createMulti(points);
+    } catch (e) {
+      debugPrint('Error loading nearby territories: $e');
+    }
   }
 
   Future<void> _locateMe() async {
@@ -97,6 +175,7 @@ class _MapRadarScreenState extends State<MapRadarScreen> {
         ),
         MapAnimationOptions(duration: 1000, startDelay: 0),
       );
+      _loadNearbyTerritories(position.latitude, position.longitude);
     } catch (e) {
       debugPrint("Error locating user: $e");
     }
@@ -108,7 +187,7 @@ class _MapRadarScreenState extends State<MapRadarScreen> {
       extendBodyBehindAppBar: true,
       body: Stack(
         children: [
-          // ── Full-screen map ──────────────────────────────────────────────
+          // Ã¢â€â‚¬Ã¢â€â‚¬ Full-screen map Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
           MapWidget(
             styleUri: Theme.of(context).brightness == Brightness.dark ? MapboxStyles.DARK : MapboxStyles.LIGHT,
             cameraOptions: CameraOptions(
@@ -121,7 +200,7 @@ class _MapRadarScreenState extends State<MapRadarScreen> {
             onMapCreated: _onMapCreated,
           ),
 
-          // ── Home Map UI Overlay ─────────────────────────────────────────
+          // Ã¢â€â‚¬Ã¢â€â‚¬ Home Map UI Overlay Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
           HomeMapOverlay(
             onLocateMe: _locateMe,
             onNavigateToMe: widget.onNavigateToMe,

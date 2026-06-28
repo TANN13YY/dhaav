@@ -77,8 +77,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       firstDate: DateTime(1940),
       lastDate: DateTime.now(),
       builder: (ctx, child) => Theme(
-        data: ThemeData.dark().copyWith(
-          colorScheme: ColorScheme.dark(
+        data: Theme.of(context).copyWith(
+          colorScheme: Theme.of(context).colorScheme.copyWith(
             primary: Theme.of(context).colorScheme.primary,
             surface: Theme.of(context).scaffoldBackgroundColor,
           ),

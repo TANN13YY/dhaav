@@ -119,15 +119,26 @@ class _MyTerritoriesScreenState extends State<MyTerritoriesScreen> {
                                     fontSize: 16,
                                   ),
                                 ),
-                                SizedBox(height: 4),
+                                const SizedBox(height: 4),
                                 Row(
                                   children: [
-                                    Icon(Icons.stars, color: AppColors.gold, size: 14),
-                                    SizedBox(width: 4),
+                                    const Icon(Icons.stars, color: AppColors.gold, size: 14),
+                                    const SizedBox(width: 4),
                                     Text(
-                                      '${territory.rp} RP Value',
+                                      '${territory.rp} RP',
                                       style: GoogleFonts.orbitron(
                                         color: AppColors.gold,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Icon(Icons.crop_square, color: Theme.of(context).colorScheme.primary, size: 14),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '${territory.areaSqm.toStringAsFixed(1)} m²',
+                                      style: GoogleFonts.orbitron(
+                                        color: Theme.of(context).colorScheme.primary,
                                         fontWeight: FontWeight.bold,
                                         fontSize: 12,
                                       ),

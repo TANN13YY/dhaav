@@ -2,6 +2,7 @@ import 'dart:developer';
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class RunResult {
   final String id;
@@ -41,7 +42,7 @@ class RunResult {
       'averagePaceMinPerKm': averagePaceMinPerKm,
       'isBusted': isBusted,
       'totalDurationMs': totalDuration.inMilliseconds,
-      'pathCoordinates': pathCoordinates,
+      'pathCoordinates': pathCoordinates.map((c) => GeoPoint(c[0], c[1])).toList(),
       'timestamp': timestamp.millisecondsSinceEpoch,
       'isClosedLoop': isClosedLoop,
       'areaM2': areaM2,
@@ -57,7 +58,10 @@ class RunResult {
       isBusted: map['isBusted'] ?? false,
       totalDuration: Duration(milliseconds: map['totalDurationMs'] ?? 0),
       pathCoordinates: (map['pathCoordinates'] as List<dynamic>?)
-              ?.map<List<double>>((e) => (e as List<dynamic>).map<double>((v) => (v as num).toDouble()).toList())
+              ?.map<List<double>>((e) {
+                if (e is GeoPoint) return [e.latitude, e.longitude];
+                return (e as List<dynamic>).map<double>((v) => (v as num).toDouble()).toList();
+              })
               .toList() ?? <List<double>>[],
       isClosedLoop: map['isClosedLoop'] ?? false,
       areaM2: (map['areaM2'] ?? 0.0).toDouble(),
@@ -121,14 +125,11 @@ class RunTracker extends ChangeNotifier {
 
   /// Get currently accumulated RP
   int get currentRP {
+    final m = _totalDistanceMeters;
     if (isCurrentlyClosedLoop) {
-      return (capturedAreaM2 / 10.0).round();
+      return (m / 100).round();
     } else {
-      // Unclosed loop logic
-      final m = _totalDistanceMeters;
-      if (totalDistanceKm < 10) return (m / 100).round();
-      if (totalDistanceKm < 16) return (m / 50).round();
-      return (m / 10).round();
+      return (m / 110).round();
     }
   }
 

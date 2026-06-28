@@ -66,5 +66,18 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+
+	<!-- Permissions for Background Location Tracking -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app needs access to location when open to track your run.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>This app needs access to location in the background to continue tracking while running.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>This app needs access to location to continue tracking your run even in the background.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
+
 </dict>
 </plist>

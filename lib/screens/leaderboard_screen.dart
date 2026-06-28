@@ -59,7 +59,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     );
   }
 
-  // ─── Header ─────────────────────────────────────────────────────────────
+  // â”€â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Widget _buildHeader() {
     return Padding(
@@ -76,7 +76,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     );
   }
 
-  // ─── Top Category Tabs ──────────────────────────────────────────────────
+  // â”€â”€â”€ Top Category Tabs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Widget _buildCategoryTabs() {
     final labels = ['OVERALL', 'TOP GAINERS', 'TOP LOSERS'];
@@ -138,7 +138,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     );
   }
 
-  // ─── Weekly / All Time Toggle ───────────────────────────────────────────
+  // â”€â”€â”€ Weekly / All Time Toggle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Widget _buildTimeToggle() {
     return Padding(
@@ -191,7 +191,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     );
   }
 
-  // ─── Leaderboard List ───────────────────────────────────────────────────
+  // â”€â”€â”€ Leaderboard List â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Widget _buildLeaderboardList() {
     // Determine the field to order by and display label
@@ -199,7 +199,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     String metricLabel;
 
     switch (_tabController.index) {
-      case 0: // Overall — net RP (rpGained)
+      case 0: // Overall â€” net RP (rpGained)
         orderByField = _isWeekly ? 'weeklyRpGained' : 'rpGained';
         metricLabel = 'RP';
         break;
@@ -237,7 +237,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
         }
 
         if (snapshot.hasError) {
-          // Common: missing composite index — show a helpful message
+          // Common: missing composite index â€” show a helpful message
           final errorMsg = snapshot.error.toString();
           if (errorMsg.contains('FAILED_PRECONDITION') || errorMsg.contains('index')) {
             return _buildEmptyState(
@@ -290,7 +290,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
             // Get the metric value based on current tab
             int metricValue;
             switch (_tabController.index) {
-              case 0: // Overall — show net: rpGained - rpLost
+              case 0: // Overall â€” show net: rpGained - rpLost
                 final gained = (data[_isWeekly ? 'weeklyRpGained' : 'rpGained'] ?? 0) as num;
                 final lost = (data[_isWeekly ? 'weeklyRpLost' : 'rpLost'] ?? 0) as num;
                 metricValue = (gained - lost).toInt();
@@ -318,7 +318,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     );
   }
 
-  // ─── Rank Card ──────────────────────────────────────────────────────────
+  // â”€â”€â”€ Rank Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Widget _buildRankCard(int rank, String name, int value, String label,
       {bool isLoss = false}) {
@@ -339,8 +339,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                 ? const Color(0xFFCD7F32).withValues(alpha: 0.15)
                 : Theme.of(context).cardColor;
 
-    // Color for the RP value — red for losers tab, green/white otherwise
-    final Color valueColor = isLoss ? const Color(0xFFFF6B6B) : Colors.white;
+    // Color for the RP value - red for losers tab, green/onSurface otherwise
+    final Color valueColor = isLoss ? const Color(0xFFFF6B6B) : Theme.of(context).colorScheme.onSurface;
     final String prefix = isLoss ? '-' : '';
 
     return Container(
@@ -455,7 +455,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     );
   }
 
-  // ─── Empty State ────────────────────────────────────────────────────────
+  // â”€â”€â”€ Empty State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   Widget _buildEmptyState({
     required IconData icon,

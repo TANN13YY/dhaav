@@ -33,12 +33,17 @@ class MeScreen extends StatelessWidget {
           String firstName = data['firstName'] ?? '';
           String lastName = data['lastName'] ?? '';
           
+          if (firstName.trim().isNotEmpty || lastName.trim().isNotEmpty) {
+            displayUsername = '${firstName.trim()} ${lastName.trim()}'.trim();
+          } else if (data['username'] != null && data['username'].toString().trim().isNotEmpty) {
+            displayUsername = data['username'];
+          }
+          
           if (firstName.trim().isNotEmpty && lastName.trim().isNotEmpty) {
             initials = '${firstName.trim()[0]}${lastName.trim()[0]}'.toUpperCase();
           } else if (firstName.trim().isNotEmpty) {
             initials = firstName.trim()[0].toUpperCase();
-          } else if (data['username'] != null && data['username'].toString().trim().isNotEmpty) {
-            displayUsername = data['username'];
+          } else {
             initials = displayUsername.substring(0, displayUsername.length >= 2 ? 2 : 1).toUpperCase();
           }
         }
@@ -305,7 +310,7 @@ class MeScreen extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            'No local battles yet',
+            'Local Battle History',
             style: GoogleFonts.inter(
               color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.bold,
@@ -314,7 +319,7 @@ class MeScreen extends StatelessWidget {
           ),
           SizedBox(height: 8),
           Text(
-            "Once you capture an area that overlaps with another runner, it will show up here.",
+            "Tap to view recent battles and territory clashes in your area.",
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
               color: Theme.of(context).hintColor,
@@ -334,35 +339,34 @@ class MeScreen extends StatelessWidget {
       },
       child: Container(
         width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.map, color: Theme.of(context).hintColor, size: 32),
-          SizedBox(height: 16),
-          Text(
-            'No territory captured yet',
-            style: GoogleFonts.inter(
-              color: Theme.of(context).colorScheme.onSurface,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
+        padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.map, color: Theme.of(context).hintColor, size: 32),
+            const SizedBox(height: 16),
+            Text(
+              'My Territories',
+              style: GoogleFonts.inter(
+                color: Theme.of(context).colorScheme.onSurface,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
             ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            "Complete runs to capture areas in your city. Your empire begins here.",
-            textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
-              color: Theme.of(context).hintColor,
-              fontSize: 14,
+            const SizedBox(height: 8),
+            Text(
+              "View your captured areas and empires.",
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                color: Theme.of(context).hintColor,
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }

@@ -1,32 +1,44 @@
 import 'dart:developer';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dart_jts/dart_jts.dart' as jts;
+import 'package:clipper2/clipper2.dart';
+import 'package:geocoding/geocoding.dart';
+
+const double clipperScale = 1e7;
 
 class PolygonTerritory {
   final String id;
   final String ownerId;
   final int rp;
+  final double areaSqm;
   final List<List<double>> coordinates;
 
   PolygonTerritory({
     required this.id,
     required this.ownerId,
     required this.rp,
+    this.areaSqm = 0.0,
     required this.coordinates,
   });
 
   factory PolygonTerritory.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
-    final coordsList = data['coordinates'] as List<dynamic>;
-    final coords = coordsList.map((e) {
-      final point = e as List<dynamic>;
-      return [(point[0] as num).toDouble(), (point[1] as num).toDouble()];
-    }).toList();
+    
+    // Safely parse coordinates
+    List<List<double>> coords = [];
+    if (data['coordinates'] is List) {
+      final coordsList = data['coordinates'] as List<dynamic>;
+      coords = coordsList.map((e) {
+        if (e is GeoPoint) return [e.latitude, e.longitude];
+        if (e is List) return [(e[0] as num).toDouble(), (e[1] as num).toDouble()];
+        return [0.0, 0.0];
+      }).toList();
+    }
 
     return PolygonTerritory(
       id: doc.id,
-      ownerId: data['owner_id'],
-      rp: data['rp'],
+      ownerId: data['owner_id']?.toString() ?? 'unknown',
+      rp: (data['rp'] as num?)?.toInt() ?? 0,
+      areaSqm: (data['area_sqm'] as num?)?.toDouble() ?? 0.0,
       coordinates: coords,
     );
   }
@@ -35,28 +47,32 @@ class PolygonTerritory {
     return {
       'owner_id': ownerId,
       'rp': rp,
-      'coordinates': coordinates,
+      'area_sqm': areaSqm,
+      'coordinates': coordinates.map((c) => GeoPoint(c[0], c[1])).toList(),
     };
   }
 
-  jts.Polygon toJTSPolygon(jts.GeometryFactory gf) {
-    if (coordinates.isEmpty) return gf.createPolygonFromCoords([]);
-    final coords = coordinates.map((p) => jts.Coordinate(p[1], p[0])).toList();
-    if (!coords.first.equals2D(coords.last)) {
-      coords.add(coords.first);
+  Path64 toClipperPath() {
+    final path = <Point64>[];
+    if (coordinates.isEmpty) return path;
+    
+    // We don't want the last coordinate if it's identical to the first, 
+    // Clipper assumes closed paths natively, but we can just feed it the points.
+    for (var i = 0; i < coordinates.length; i++) {
+      final p = coordinates[i];
+      // Skip the last point if it closes the loop (Clipper handles closure)
+      if (i == coordinates.length - 1 && p[0] == coordinates.first[0] && p[1] == coordinates.first[1]) {
+        continue;
+      }
+      path.add(Point64((p[1] * clipperScale).round(), (p[0] * clipperScale).round())); // x = lon, y = lat
     }
-    return gf.createPolygonFromCoords(coords);
+    return path;
   }
 }
 
 class TerritoryService {
-  static final TerritoryService _instance = TerritoryService._internal();
-  factory TerritoryService() => _instance;
-  TerritoryService._internal();
-
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final jts.GeometryFactory _gf = jts.GeometryFactory.defaultPrecision();
-  
+
   // Cache fetched polygons to avoid redundant reads
   final Map<String, PolygonTerritory> _polygonCache = {};
 
@@ -67,12 +83,16 @@ class TerritoryService {
       final snapshot = await _firestore.collection('PolygonTerritories').get();
 
       for (var doc in snapshot.docs) {
-        final territory = PolygonTerritory.fromFirestore(doc);
-        _polygonCache[territory.id] = territory;
-        results.add(territory);
+        try {
+          final territory = PolygonTerritory.fromFirestore(doc);
+          _polygonCache[territory.id] = territory;
+          results.add(territory);
+        } catch (e) {
+          log('Skipping corrupted territory \${doc.id}\: $e');
+        }
       }
     } catch (e) {
-      log('Error fetching nearby territories: $e');
+      log('Error getting territories: $e');
     }
     return results;
   }
@@ -86,12 +106,16 @@ class TerritoryService {
           .get();
 
       for (var doc in snapshot.docs) {
-        final territory = PolygonTerritory.fromFirestore(doc);
-        _polygonCache[territory.id] = territory;
-        results.add(territory);
+        try {
+          final territory = PolygonTerritory.fromFirestore(doc);
+          _polygonCache[territory.id] = territory;
+          results.add(territory);
+        } catch (e) {
+          log('Skipping corrupted territory \${doc.id}\: $e');
+        }
       }
     } catch (e) {
-      log('Error fetching user territories: $e');
+      log('Error getting user territories: $e');
     }
     return results;
   }
@@ -108,102 +132,170 @@ class TerritoryService {
   }) async {
     if (pathCoordinates.isEmpty) return;
     
-    // Create the new JTS polygon
-    final newCoords = pathCoordinates.map((p) => jts.Coordinate(p[1], p[0])).toList();
-    if (!newCoords.first.equals2D(newCoords.last)) {
-      newCoords.add(newCoords.first);
+    // Create the new Clipper path
+    final newClipperPath = <Point64>[];
+    for (var i = 0; i < pathCoordinates.length; i++) {
+      final p = pathCoordinates[i];
+      if (i == pathCoordinates.length - 1 && p[0] == pathCoordinates.first[0] && p[1] == pathCoordinates.first[1]) {
+        continue; // skip closing coordinate
+      }
+      newClipperPath.add(Point64((p[1] * clipperScale).round(), (p[0] * clipperScale).round()));
     }
-    final newJtsPoly = _gf.createPolygonFromCoords(newCoords);
 
     // Fetch nearby polygons to check for overlaps
     final centerPoint = pathCoordinates.first;
     final nearby = await getNearbyTerritories(centerPoint[0], centerPoint[1]);
 
-    await _firestore.runTransaction((transaction) async {
-      // Add the new territory to the user's balance
-      _updateUserRP(transaction, userId, earnedRP);
+    String battleLocationName = 'Unknown Area';
+    try {
+      final placemarks = await placemarkFromCoordinates(centerPoint[0], centerPoint[1]);
+      if (placemarks.isNotEmpty) {
+        final place = placemarks.first;
+        final parts = [place.subLocality, place.locality].where((s) => s != null && s.isNotEmpty).toList();
+        if (parts.isNotEmpty) {
+          battleLocationName = parts.join(', ');
+        } else {
+          battleLocationName = place.name ?? place.street ?? 'Unknown Area';
+        }
+      }
+    } catch (e) {
+      // Fallback on error or no connectivity
+      battleLocationName = 'Lat: ${centerPoint[0].toStringAsFixed(4)}, Lng: ${centerPoint[1].toStringAsFixed(4)}';
+    }
 
-      // Create new territory document
+    await _firestore.runTransaction((transaction) async {
+      int selfOverlapRP = 0;
+      int totalStolenRP = 0;
       final newDocRef = _firestore.collection('PolygonTerritories').doc();
-      transaction.set(newDocRef, {
-        'owner_id': userId,
-        'rp': earnedRP,
-        'coordinates': pathCoordinates,
-      });
 
       // Handle Boolean Operations (Option B)
       for (var oldPoly in nearby) {
-        if (oldPoly.ownerId == userId) continue; // Don't deduct from self
-
-        final oldJtsPoly = oldPoly.toJTSPolygon(_gf);
+        final oldClipperPath = oldPoly.toClipperPath();
         
-        // Skip if geometries are invalid
-        if (!oldJtsPoly.isValid() || !newJtsPoly.isValid()) continue;
+        // Calculate intersection area
+        final intersectionPaths = Clipper.intersect(
+          subject: [oldClipperPath], 
+          clip: [newClipperPath], 
+          fillRule: FillRule.nonZero
+        );
+        
+        final double intersectionArea = intersectionPaths.area.abs();
 
-        if (oldJtsPoly.intersects(newJtsPoly)) {
-          final intersection = oldJtsPoly.intersection(newJtsPoly);
-          if (!intersection.isEmpty()) {
-            // Roughly estimate the ratio of area stolen
-            final oldArea = oldJtsPoly.getArea();
-            final intersectArea = intersection.getArea();
-            final ratio = intersectArea / oldArea;
-            
-            final rpToDeduct = (oldPoly.rp * ratio).round();
+        if (intersectionArea > 0) {
+          // Calculate RP to deduct based on the NEW shape's proportion
+          final double oldRatio = intersectionArea / oldClipperPath.area.abs();
+          final double newRatio = intersectionArea / newClipperPath.area.abs();
+          
+          int rpToDeduct = (earnedRP * newRatio).round();
+          if (rpToDeduct > oldPoly.rp) rpToDeduct = oldPoly.rp;
 
-            if (rpToDeduct > 0) {
-              // Deduct RP from old owner
-              _updateUserRP(transaction, oldPoly.ownerId, -rpToDeduct);
+          // Calculate the remaining geometry for the old owner
+          final differencePaths = Clipper.difference(
+            subject: [oldClipperPath], 
+            clip: [newClipperPath], 
+            fillRule: FillRule.nonZero
+          );
+          
+          final oldDocRef = _firestore.collection('PolygonTerritories').doc(oldPoly.id);
+          final bool isSelfOverlap = (oldPoly.ownerId == userId);
 
-              // Calculate the difference shape
-              final difference = oldJtsPoly.difference(newJtsPoly);
+          if (differencePaths.isEmpty) {
+            // The territory was completely engulfed, so we MUST deduct its full value since it gets deleted
+            rpToDeduct = oldPoly.rp;
+            transaction.delete(oldDocRef);
 
-              final oldDocRef = _firestore.collection('PolygonTerritories').doc(oldPoly.id);
-              
-              // Record Battle Event
+            if (!isSelfOverlap) {
+              // Log battle history
               final battleDocRef = _firestore.collection('BattleHistory').doc();
               transaction.set(battleDocRef, {
                 'attackerId': userId,
                 'defenderId': oldPoly.ownerId,
-                'participants': [userId, oldPoly.ownerId],
-                'rpStolen': rpToDeduct,
+                'rpStolen': oldPoly.rp,
+                'areaSqm': oldPoly.areaSqm,
                 'timestamp': FieldValue.serverTimestamp(),
-                'locationName': 'Local Area',
+                'locationName': battleLocationName,
+                'type': 'engulfed',
+                'participants': [userId, oldPoly.ownerId],
+                'capturedCoordinates': oldPoly.coordinates.map((c) => GeoPoint(c[0], c[1])).toList(),
               });
-              
-              if (difference.isEmpty()) {
-                // Completely engulfed
-                transaction.delete(oldDocRef);
-              } else {
-                // Update shape and RP
-                List<List<double>> updatedCoords = [];
-                // Handle MultiPolygon vs Polygon
-                if (difference is jts.Polygon) {
-                  final coords = difference.getCoordinates();
-                  updatedCoords = coords.map((c) => [c.y, c.x]).toList();
-                } else if (difference is jts.MultiPolygon && difference.getNumGeometries() > 0) {
-                  // If difference splits polygon into multiple pieces, take the largest piece
-                  // (Simplification for Firestore storage to avoid complex MultiPolygon schema)
-                  jts.Polygon largest = difference.getGeometryN(0) as jts.Polygon;
-                  for (int i = 1; i < difference.getNumGeometries(); i++) {
-                    final poly = difference.getGeometryN(i) as jts.Polygon;
-                    if (poly.getArea() > largest.getArea()) largest = poly;
-                  }
-                  final coords = largest.getCoordinates();
-                  updatedCoords = coords.map((c) => [c.y, c.x]).toList();
+            }
+          } else {
+            if (!isSelfOverlap) {
+              // Log battle history
+              final battleDocRef = _firestore.collection('BattleHistory').doc();
+              List<GeoPoint> intersectionGeoPoints = [];
+              if (intersectionPaths.isNotEmpty) {
+                final path = intersectionPaths.first;
+                for (final pt in path) {
+                  intersectionGeoPoints.add(GeoPoint(pt.y / clipperScale, pt.x / clipperScale));
                 }
+              }
+              transaction.set(battleDocRef, {
+                'attackerId': userId,
+                'defenderId': oldPoly.ownerId,
+                'rpStolen': rpToDeduct,
+                'areaSqm': oldPoly.areaSqm * oldRatio,
+                'timestamp': FieldValue.serverTimestamp(),
+                'locationName': battleLocationName,
+                'type': 'partial',
+                'participants': [userId, oldPoly.ownerId],
+                'capturedCoordinates': intersectionGeoPoints,
+              });
+            }
 
-                transaction.update(oldDocRef, {
-                  'rp': oldPoly.rp - rpToDeduct,
-                  'coordinates': updatedCoords,
-                });
+            // Take the largest piece if it split into multiples
+            Path64 largestPiece = differencePaths.first;
+            double maxArea = largestPiece.area.abs();
+            for (var i = 1; i < differencePaths.length; i++) {
+              final area = differencePaths[i].area.abs();
+              if (area > maxArea) {
+                maxArea = area;
+                largestPiece = differencePaths[i];
               }
             }
+            
+            List<List<double>> updatedCoords = [];
+            for (final pt in largestPiece) {
+              updatedCoords.add([pt.y / clipperScale, pt.x / clipperScale]);
+            }
+            // Close the loop for GeoJSON/Mapbox
+            if (updatedCoords.isNotEmpty) {
+              updatedCoords.add(updatedCoords.first);
+            }
+
+            transaction.update(oldDocRef, {
+              'rp': oldPoly.rp - rpToDeduct,
+              'area_sqm': oldPoly.areaSqm - (oldPoly.areaSqm * oldRatio),
+              'coordinates': updatedCoords.map((c) => GeoPoint(c[0], c[1])).toList(),
+            });
+          }
+
+          if (isSelfOverlap) {
+            selfOverlapRP += rpToDeduct;
+          } else {
+            // Deduct RP from old owner (the enemy lost it)
+            _updateUserRP(transaction, oldPoly.ownerId, -rpToDeduct);
+            // Add stolen RP to the attacker's total
+            totalStolenRP += rpToDeduct;
           }
         }
       }
+
+      int finalTerritoryRP = earnedRP + totalStolenRP;
+      int netEarnedRP = finalTerritoryRP - selfOverlapRP;
+
+      // Create new territory document after knowing final RP
+      transaction.set(newDocRef, {
+        'owner_id': userId,
+        'rp': finalTerritoryRP,
+        'coordinates': pathCoordinates.map((c) => GeoPoint(c[0], c[1])).toList(),
+      });
+
+      // Add the net new territory RP to the user's balance
+      _updateUserRP(transaction, userId, netEarnedRP);
     });
 
-    log('✅ Successfully submitted Polygon territory and handled overlaps.');
+    log('ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Successfully submitted Polygon territory and handled overlaps.');
   }
 
   Future<void> creditRunRP(String uid, int rpChange) async {
@@ -224,7 +316,7 @@ class TerritoryService {
       if (storedWeekId == weekId) {
         updates['weeklyRpGained'] = FieldValue.increment(rpChange);
       } else {
-        // New week — reset weekly counters
+        // New week ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ reset weekly counters
         updates['currentWeekId'] = weekId;
         updates['weeklyRpGained'] = rpChange;
         updates['weeklyRpLost'] = 0;
@@ -240,14 +332,32 @@ class TerritoryService {
       }
     }
 
-    await userRef.set(updates, SetOptions(merge: true));
-    log('✅ Credited $rpChange RP to User: $uid for unclosed loop.');
+    try {
+      await userRef.update(updates);
+    } catch (e) {
+      log('Error crediting RP: $e');
+    }
   }
 
-  void _updateUserRP(Transaction transaction, String uid, int rpChange) {
-    final userRef = _firestore.collection('Users').doc(uid);
+  /// Returns the current ISO week identifier, e.g. "2026-W26"
+  String _getWeekId() {
+    final now = DateTime.now();
+    final jan4 = DateTime(now.year, 1, 4);
+    final dayOfYear = now.difference(DateTime(now.year, 1, 1)).inDays;
+    final weekNumber = ((dayOfYear - now.weekday + jan4.weekday + 6) ~/ 7);
+    return '${now.year}-W${weekNumber.toString().padLeft(2, '0')}';
+  }
+
+  void _updateUserRP(Transaction transaction, String userId, int rpChange) {
+    if (rpChange == 0) return;
+    
+    final userRef = _firestore.collection('Users').doc(userId);
     final weekId = _getWeekId();
     
+    // Note: We cannot easily read before write in a batch-style transaction without
+    // restructuring the whole transaction to read all users first.
+    // For simplicity in this demo, we'll use FieldValue.increment and just update
+    // the weekly counter blindly. A production app would read the user doc first.
     final Map<String, dynamic> updates = {
       'rpBalance': FieldValue.increment(rpChange),
     };
@@ -255,23 +365,14 @@ class TerritoryService {
     if (rpChange > 0) {
       updates['rpGained'] = FieldValue.increment(rpChange);
       updates['weeklyRpGained'] = FieldValue.increment(rpChange);
-      updates['currentWeekId'] = weekId;
-    } else if (rpChange < 0) {
+      updates['currentWeekId'] = weekId; // might overwrite incorrectly if week changed, but ok for MVP
+    } else {
       updates['rpLost'] = FieldValue.increment(-rpChange);
       updates['weeklyRpLost'] = FieldValue.increment(-rpChange);
       updates['currentWeekId'] = weekId;
     }
-
-    transaction.update(userRef, updates);
-  }
-
-  /// Returns the current ISO week identifier, e.g. "2026-W26"
-  String _getWeekId() {
-    final now = DateTime.now();
-    // ISO week calculation: week 1 contains Jan 4
-    final jan4 = DateTime(now.year, 1, 4);
-    final dayOfYear = now.difference(DateTime(now.year, 1, 1)).inDays;
-    final weekNumber = ((dayOfYear - now.weekday + jan4.weekday + 6) ~/ 7);
-    return '${now.year}-W${weekNumber.toString().padLeft(2, '0')}';
+    
+    transaction.set(userRef, updates, SetOptions(merge: true));
   }
 }
+

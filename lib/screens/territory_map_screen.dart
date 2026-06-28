@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../services/territory_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/theme_manager.dart';
@@ -43,11 +44,14 @@ class _TerritoryMapScreenState extends State<TerritoryMapScreen> {
 
     final coords = widget.territory.coordinates.map((c) => Position(c[1], c[0])).toList();
     if (coords.isNotEmpty) {
+      final isMine = widget.territory.ownerId == FirebaseAuth.instance.currentUser?.uid;
+      final colorValue = isMine ? AppColors.territoryOwn.value : AppColors.territoryOther.value;
+
       await _polygonManager!.create(PolygonAnnotationOptions(
         geometry: Polygon(coordinates: [coords]),
-        fillColor: AppColors.territoryOwn.toARGB32(),
+        fillColor: colorValue,
         fillOpacity: 0.4,
-        fillOutlineColor: AppColors.territoryOwn.toARGB32(),
+        fillOutlineColor: colorValue,
       ));
 
       // Calculate bounding box to fit camera
