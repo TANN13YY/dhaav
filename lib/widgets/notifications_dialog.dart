@@ -64,9 +64,9 @@ class _NotificationsListState extends State<_NotificationsList> {
     if (uid == null) return;
 
     try {
-      final doc = await FirebaseFirestore.instance.collection('Users').doc(uid).get();
-      if (doc.exists) {
-        final data = doc.data() as Map<String, dynamic>;
+      final query = await FirebaseFirestore.instance.collection('Users').where('authUid', isEqualTo: uid).limit(1).get();
+      if (query.docs.isNotEmpty) {
+        final data = query.docs.first.data();
         final bool hasClaimed = data['welcomeRPClaimed'] ?? false;
         if (mounted) {
           setState(() {
@@ -74,6 +74,8 @@ class _NotificationsListState extends State<_NotificationsList> {
             _isLoading = false;
           });
         }
+      } else {
+        if (mounted) setState(() => _isLoading = false);
       }
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);

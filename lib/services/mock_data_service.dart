@@ -36,8 +36,22 @@ class MockDataService {
     return area.abs();
   }
 
+  Future<String?> _getDhaavId(String authUid) async {
+    final query = await _firestore.collection('Users').where('authUid', isEqualTo: authUid).limit(1).get();
+    if (query.docs.isNotEmpty) {
+      return query.docs.first.id;
+    }
+    return null;
+  }
+
   Future<void> generateMockData(BuildContext context, String currentUserId) async {
     try {
+      final dhaavId = await _getDhaavId(currentUserId);
+      if (dhaavId == null) {
+        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error: Could not resolve Dhaav ID')));
+        return;
+      }
+
       log('Generating mock data...');
 
       if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Step 1: Locating...')));
@@ -88,13 +102,13 @@ class MockDataService {
           final rp = (perimeter / 100.0).round();
           final owner = currentUserId;
 
-          // Save territory
-          await _firestore.collection('PolygonTerritories').add({
-            'owner_id': owner,
-            'rp': rp,
-            'area_sqm': area,
-            'coordinates': coords.map((c) => GeoPoint(c[0], c[1])).toList(),
-          });
+          // Process territory through normal clipper logic to prevent overlap
+          await TerritoryService().submitCustomTerritory(
+            pathCoordinates: coords,
+            areaM2: area,
+            userId: dhaavId, // Use dhaavId for territory ownership
+            earnedRP: rp,
+          );
 
           // Credit RP using Admin Cloud Function
           try {
@@ -142,6 +156,10 @@ class MockDataService {
 
   Future<void> simulateTerritoryLoss(BuildContext context, String currentUserId) async {
     try {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Simulating loss...')));
+      }
+      
       final result = await FirebaseFunctions.instance.httpsCallable('adminSimulateTerritoryLoss').call({
         'targetUid': currentUserId,
       });
@@ -170,8 +188,11 @@ class MockDataService {
     try {
       if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Simulating Alpha attack...')));
       
+      final dhaavId = await _getDhaavId(currentUserId);
+      if (dhaavId == null) return;
+
       final query = await _firestore.collection('PolygonTerritories')
-          .where('owner_id', isEqualTo: currentUserId)
+          .where('owner_id', isEqualTo: dhaavId)
           .get();
           
       if (query.docs.isEmpty) {

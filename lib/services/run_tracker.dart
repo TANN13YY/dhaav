@@ -15,6 +15,7 @@ class RunResult {
   final DateTime timestamp;
   final bool isClosedLoop;
   final double areaM2;
+  final bool isMock;
 
   RunResult({
     required this.id,
@@ -26,6 +27,7 @@ class RunResult {
     required this.pathCoordinates,
     required this.isClosedLoop,
     required this.areaM2,
+    this.isMock = false,
     DateTime? timestamp,
   }) : timestamp = timestamp ?? DateTime.now();
 
@@ -46,6 +48,7 @@ class RunResult {
       'timestamp': timestamp.millisecondsSinceEpoch,
       'isClosedLoop': isClosedLoop,
       'areaM2': areaM2,
+      'isMock': isMock,
     };
   }
 
@@ -74,6 +77,7 @@ class RunResult {
               .toList() ?? <List<double>>[],
       isClosedLoop: map['isClosedLoop'] ?? false,
       areaM2: (map['areaM2'] ?? 0.0).toDouble(),
+      isMock: map['isMock'] ?? false,
       timestamp: parsedTimestamp,
     );
   }

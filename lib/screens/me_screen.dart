@@ -18,8 +18,8 @@ class MeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     
-    return StreamBuilder<DocumentSnapshot>(
-      stream: user != null ? FirebaseFirestore.instance.collection('Users').doc(user.uid).snapshots() : null,
+    return StreamBuilder<QuerySnapshot>(
+      stream: user != null ? FirebaseFirestore.instance.collection('Users').where('authUid', isEqualTo: user.uid).limit(1).snapshots() : null,
       builder: (context, snapshot) {
         String displayUsername = user?.email?.split('@').first ?? 'AGENT_UNKNOWN';
         String initials = displayUsername.isNotEmpty 
@@ -28,8 +28,8 @@ class MeScreen extends StatelessWidget {
 
         Map<String, dynamic>? data;
 
-        if (snapshot.hasData && snapshot.data!.data() != null) {
-          data = snapshot.data!.data() as Map<String, dynamic>;
+        if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+          data = snapshot.data!.docs.first.data() as Map<String, dynamic>;
           String firstName = data['firstName'] ?? '';
           String lastName = data['lastName'] ?? '';
           
@@ -168,6 +168,15 @@ class MeScreen extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                  if (data != null && data['dhaavId'] != null)
+                    Text(
+                      'DHAAV ID: ${data['dhaavId']}',
+                      style: GoogleFonts.inter(
+                        color: Theme.of(context).hintColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   SizedBox(height: 4),
                   GestureDetector(
                     onTap: () {

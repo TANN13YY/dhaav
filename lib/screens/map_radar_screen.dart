@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/login_sheet.dart';
 import '../widgets/home_map_overlay.dart';
 import '../theme/theme_manager.dart';
+import '../services/user_service.dart';
 import '../theme/app_colors.dart';
 import '../services/territory_service.dart';
 
@@ -108,6 +109,10 @@ class _MapRadarScreenState extends State<MapRadarScreen> {
       final territories = await TerritoryService().getNearbyTerritories(lat, lng);
       
       final currentUid = FirebaseAuth.instance.currentUser?.uid;
+      String? currentDhaavId;
+      if (currentUid != null) {
+        currentDhaavId = await UserService().fetchDhaavId(currentUid);
+      }
       
       _polygonManager?.deleteAll();
       _pointManager?.deleteAll();
@@ -117,7 +122,7 @@ class _MapRadarScreenState extends State<MapRadarScreen> {
       List<PointAnnotationOptions> points = [];
 
       for (var t in territories) {
-        final isMine = t.ownerId == currentUid;
+        final isMine = t.ownerId == currentDhaavId;
         final coords = t.coordinates.map((p) => Position(p[1], p[0])).toList();
         
         polygons.add(PolygonAnnotationOptions(

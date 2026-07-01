@@ -10,9 +10,11 @@ import '../screens/run_screen.dart';
 import '../screens/map_radar_screen.dart';
 import '../services/mock_data_service.dart';
 import '../debug_helper.dart';
+import '../services/user_service.dart';
 
 /// Shows the profile settings bottom sheet when tapping the profile icon on the Home tab.
-void showProfileSettingsSheet(BuildContext context, {required VoidCallback onNavigateToMe}) {
+void showProfileSettingsSheet(BuildContext context,
+    {required VoidCallback onNavigateToMe}) {
   showModalBottomSheet(
     context: context,
     backgroundColor: Colors.transparent,
@@ -34,376 +36,438 @@ void showProfileSettingsSheet(BuildContext context, {required VoidCallback onNav
 }
 
 class _ProfileSettingsContent extends StatefulWidget {
-  const _ProfileSettingsContent({required this.scrollController, required this.onNavigateToMe});
+  const _ProfileSettingsContent(
+      {required this.scrollController, required this.onNavigateToMe});
   final ScrollController scrollController;
   final VoidCallback onNavigateToMe;
 
   @override
-  State<_ProfileSettingsContent> createState() => _ProfileSettingsContentState();
+  State<_ProfileSettingsContent> createState() =>
+      _ProfileSettingsContentState();
 }
 
 class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
   bool _appSettingsExpanded = false;
   bool _privacyExpanded = false;
-  bool _isAnonymous = false;
 
   @override
   void initState() {
     super.initState();
-    _loadAnonymousState();
-  }
-
-  Future<void> _loadAnonymousState() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid != null) {
-      final doc = await FirebaseFirestore.instance.collection('Users').doc(uid).get();
-      if (doc.exists && mounted) {
-        setState(() {
-          _isAnonymous = doc.data()?['isAnonymous'] ?? false;
-        });
-      }
-    }
-  }
-
-  Future<void> _setAnonymousState(bool value) async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid != null) {
-      await FirebaseFirestore.instance.collection('Users').doc(uid).set(
-        {'isAnonymous': value}, SetOptions(merge: true)
-      );
-      if (mounted) {
-        setState(() {
-          _isAnonymous = value;
-        });
-      }
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
 
-    return StreamBuilder<DocumentSnapshot>(
-      stream: user != null ? FirebaseFirestore.instance.collection('Users').doc(user.uid).snapshots() : null,
-      builder: (context, snapshot) {
-        String displayUsername = user?.email?.split('@').first ?? 'Agent';
-        String initials = displayUsername.isNotEmpty 
-            ? displayUsername.substring(0, displayUsername.length >= 2 ? 2 : 1).toUpperCase() 
-            : 'U';
+    return StreamBuilder<QuerySnapshot>(
+        stream: user != null
+            ? FirebaseFirestore.instance
+                .collection('Users')
+                .where('authUid', isEqualTo: user.uid)
+                .limit(1)
+                .snapshots()
+            : null,
+        builder: (context, snapshot) {
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty)
+            return const SizedBox();
+          final data = snapshot.data!.docs.first.data() as Map<String, dynamic>;
 
-        String role = 'user';
+          String displayUsername =
+              data['username'] ?? user?.email?.split('@').first ?? 'Agent';
+          String initials = displayUsername.isNotEmpty
+              ? displayUsername
+                  .substring(0, displayUsername.length >= 2 ? 2 : 1)
+                  .toUpperCase()
+              : 'U';
 
-        if (snapshot.hasData && snapshot.data!.data() != null) {
-          final data = snapshot.data!.data() as Map<String, dynamic>;
+          String role = data['role'] ?? 'user';
+          bool isAdmin = data['accountType'] == 'admin';
+
           String firstName = data['firstName'] ?? '';
           String lastName = data['lastName'] ?? '';
-          role = data['role'] ?? 'user';
-          
+
           if (firstName.trim().isNotEmpty || lastName.trim().isNotEmpty) {
             displayUsername = '${firstName.trim()} ${lastName.trim()}'.trim();
-          } else if (data['username'] != null && data['username'].toString().trim().isNotEmpty) {
+          } else if (data['username'] != null &&
+              data['username'].toString().trim().isNotEmpty) {
             displayUsername = data['username'];
           }
-          
+
           if (firstName.trim().isNotEmpty && lastName.trim().isNotEmpty) {
-            initials = '${firstName.trim()[0]}${lastName.trim()[0]}'.toUpperCase();
+            displayUsername = '${firstName.trim()} ${lastName.trim()}'.trim();
+            initials =
+                '${firstName.trim()[0]}${lastName.trim()[0]}'.toUpperCase();
           } else if (firstName.trim().isNotEmpty) {
+            displayUsername = firstName.trim();
             initials = firstName.trim()[0].toUpperCase();
           } else {
-            initials = displayUsername.substring(0, displayUsername.length >= 2 ? 2 : 1).toUpperCase();
+            initials = displayUsername
+                .substring(0, displayUsername.length >= 2 ? 2 : 1)
+                .toUpperCase();
           }
-        }
-        final name = displayUsername;
-
-        return ValueListenableBuilder<bool>(
-          valueListenable: ThemeManager().isDarkMode,
-          builder: (outerContext, isDark, child) {
-            final activeTheme = isDark ? AppTheme.dark() : AppTheme.light();
-            return Theme(
-              data: activeTheme,
-              child: Builder(
-                builder: (context) {
-                  return Material(
-                    color: Theme.of(context).scaffoldBackgroundColor,
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                    child: ListView(
-                      controller: widget.scrollController,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            children: [
-              // Handle
-              Center(
-                child: Container(
-                  margin: const EdgeInsets.symmetric(vertical: 12),
-                  width: 40, height: 4,
-                  decoration: BoxDecoration(color: Theme.of(context).dividerColor, borderRadius: BorderRadius.circular(2)),
-                ),
-              ),
-
-              // Profile header
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 24,
-                      backgroundColor: Theme.of(context).cardColor,
-                      child: Text(
-                        initials,
-                        style: GoogleFonts.orbitron(fontSize: 14, color: Theme.of(context).colorScheme.primary),
-                      ),
-                    ),
-                    SizedBox(width: 14),
-                    Expanded(
-                      child: Text(
-                        name.toUpperCase(),
-                        style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
-                    ),
-                    OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: Theme.of(context).dividerColor),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      ),
-                      onPressed: () {
-                        // Close sheet, navigate to Me tab
-                        Navigator.pop(context);
-                        widget.onNavigateToMe();
-                      },
-                      child: Text('View profile', style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w600, fontSize: 12)),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 8),
-
-              // ── Edit Profile ────────────────────────────────────────────────
-              _buildNavigationTile(
-                icon: Icons.edit,
-                label: 'Edit profile',
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const EditProfileScreen()));
-                },
-              ),
-              Divider(color: Theme.of(context).dividerColor, height: 1),
-
-              // ── App Settings (expandable) ───────────────────────────────────
-              _buildExpandableTile(
-                icon: Icons.settings,
-                label: 'App settings',
-                expanded: _appSettingsExpanded,
-                onTap: () => setState(() => _appSettingsExpanded = !_appSettingsExpanded),
-                children: [
-                  _buildSubSection(
-                    title: 'Notifications',
-                    subtitle: 'Manage notifications',
-                    onTap: () {
-                      _showNotificationSettings(context);
-                    },
-                  ),
-                  Divider(color: Theme.of(context).dividerColor, height: 1, indent: 16),
-                  _buildSubSection(
-                    title: 'Units & Measurement',
-                    subtitle: 'Kilometres & metres',
-                    onTap: () {
-                      _showUnitSettings(context);
-                    },
-                  ),
-                  Divider(color: Theme.of(context).dividerColor, height: 1, indent: 16),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 56, right: 16),
-                    child: SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      activeThumbColor: Theme.of(context).colorScheme.primary,
-                      title: Text('App Theme', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
-                      subtitle: Text(ThemeManager().isDarkMode.value ? 'Dark' : 'Light', style: TextStyle(color: Theme.of(context).hintColor, fontSize: 11)),
-                      value: ThemeManager().isDarkMode.value,
-                      onChanged: (val) {
-                        ThemeManager().toggleTheme();
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              Divider(color: Theme.of(context).dividerColor, height: 1),
-
-              // ── Privacy (expandable) ────────────────────────────────────────
-              _buildExpandableTile(
-                icon: Icons.public,
-                label: 'Privacy',
-                expanded: _privacyExpanded,
-                onTap: () => setState(() => _privacyExpanded = !_privacyExpanded),
-                children: [
-                  _buildSubAction(
-                    icon: Icons.delete_outline,
-                    label: 'Remove all my account data',
-                    onTap: () => _confirmDeleteData(context),
-                  ),
-                  Divider(color: Theme.of(context).dividerColor, height: 1, indent: 16),
-                  _buildSubAction(
-                    icon: _isAnonymous ? Icons.visibility : Icons.visibility_off,
-                    label: _isAnonymous ? 'Make my account visible' : 'Make my account anonymous',
-                    onTap: () => _toggleAnonymous(context),
-                  ),
-                ],
-              ),
-              Divider(color: Theme.of(context).dividerColor, height: 1),
-
-              // ── Contact Support ─────────────────────────────────────────────
-              _buildNavigationTile(
-                icon: Icons.headset_mic,
-                label: 'Contact support',
-                onTap: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Support: contact@dhaav.app')),
-                  );
-                },
-              ),
-              Divider(color: Theme.of(context).dividerColor, height: 1),
-
-              // ---------------- Developer Options ----------------------------------
-              if (role == 'developer') ...[
-                _buildNavigationTile(
-                  icon: Icons.developer_board,
-                  label: 'Developer: Inject Mock Data',
-                  onTap: () async {
-                    
-                    final uid = FirebaseAuth.instance.currentUser?.uid;
-                    if (uid != null) {
-                      await MockDataService().generateMockData(context, uid);
-                      mapRefreshNotifier.value++;
-                    }
-                  },
-                ),
-                _buildNavigationTile(
-                  icon: Icons.delete_forever,
-                  label: 'Developer: Clear Mock Data',
-                  onTap: () async {
-                    
-                    final uid = FirebaseAuth.instance.currentUser?.uid;
-                    if (uid != null) {
-                      await MockDataService().clearMockData(context, uid);
-                      mapRefreshNotifier.value++;
-                    }
-                  },
-                ),
-                _buildNavigationTile(
-                  icon: Icons.warning_amber_rounded,
-                  label: 'Developer: Simulate Loss',
-                  onTap: () async {
-                    
-                    final uid = FirebaseAuth.instance.currentUser?.uid;
-                    if (uid != null) {
-                      await MockDataService().simulateTerritoryLoss(context, uid);
-                      mapRefreshNotifier.value++;
-                    }
-                  },
-                ),
-                _buildNavigationTile(
-                  icon: Icons.dangerous,
-                  label: 'Developer: Alpha Attack (Partial)',
-                  onTap: () async {
-                    
-                    final shape = await showDialog<String>(
-                      context: context,
-                      builder: (context) => SimpleDialog(
-                        title: const Text('Select Attack Shape'),
+          final name = displayUsername;
+          return ValueListenableBuilder<bool>(
+            valueListenable: ThemeManager().isDarkMode,
+            builder: (outerContext, isDark, child) {
+              final activeTheme = isDark ? AppTheme.dark() : AppTheme.light();
+              return Theme(
+                data: activeTheme,
+                child: Builder(
+                  builder: (context) {
+                    return Material(
+                      color: Theme.of(context).scaffoldBackgroundColor,
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(20)),
+                      child: ListView(
+                        controller: widget.scrollController,
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
                         children: [
-                          SimpleDialogOption(
-                            onPressed: () => Navigator.pop(context, 'circle'),
-                            child: const Text('Circle'),
+                          // Handle
+                          Center(
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(vertical: 12),
+                              width: 40,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                  color: Theme.of(context).dividerColor,
+                                  borderRadius: BorderRadius.circular(2)),
+                            ),
                           ),
-                          SimpleDialogOption(
-                            onPressed: () => Navigator.pop(context, 'figure8'),
-                            child: const Text('Figure 8 (Peanut)'),
+
+                          // Profile header
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 24,
+                                  backgroundColor: Theme.of(context).cardColor,
+                                  child: Text(
+                                    initials,
+                                    style: GoogleFonts.orbitron(
+                                        fontSize: 14,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary),
+                                  ),
+                                ),
+                                SizedBox(width: 14),
+                                Expanded(
+                                  child: Text(
+                                    name.toUpperCase(),
+                                    style: GoogleFonts.inter(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16),
+                                  ),
+                                ),
+                                OutlinedButton(
+                                  style: OutlinedButton.styleFrom(
+                                    side: BorderSide(
+                                        color: Theme.of(context).dividerColor),
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(20)),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 8),
+                                  ),
+                                  onPressed: () {
+                                    // Close sheet, navigate to Me tab
+                                    Navigator.pop(context);
+                                    widget.onNavigateToMe();
+                                  },
+                                  child: Text('View profile',
+                                      style: GoogleFonts.inter(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 12)),
+                                ),
+                              ],
+                            ),
                           ),
-                          SimpleDialogOption(
-                            onPressed: () => Navigator.pop(context, 'star'),
-                            child: const Text('Star (Jagged Path)'),
+                          SizedBox(height: 8),
+
+                          // ── Edit Profile ────────────────────────────────────────────────
+                          _buildNavigationTile(
+                            icon: Icons.edit,
+                            label: 'Edit profile',
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (_) =>
+                                          const EditProfileScreen()));
+                            },
                           ),
+                          Divider(
+                              color: Theme.of(context).dividerColor, height: 1),
+
+                          // ── App Settings (expandable) ───────────────────────────────────
+                          _buildExpandableTile(
+                            icon: Icons.settings,
+                            label: 'App settings',
+                            expanded: _appSettingsExpanded,
+                            onTap: () => setState(() =>
+                                _appSettingsExpanded = !_appSettingsExpanded),
+                            children: [
+                              _buildSubSection(
+                                title: 'Notifications',
+                                subtitle: 'Manage notifications',
+                                onTap: () {
+                                  _showNotificationSettings(context);
+                                },
+                              ),
+                              Divider(
+                                  color: Theme.of(context).dividerColor,
+                                  height: 1,
+                                  indent: 16),
+                              _buildSubSection(
+                                title: 'Units & Measurement',
+                                subtitle: 'Kilometres & metres',
+                                onTap: () {
+                                  _showUnitSettings(context);
+                                },
+                              ),
+                              Divider(
+                                  color: Theme.of(context).dividerColor,
+                                  height: 1,
+                                  indent: 16),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.only(left: 56, right: 16),
+                                child: SwitchListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  activeThumbColor:
+                                      Theme.of(context).colorScheme.primary,
+                                  title: Text('App Theme',
+                                      style: TextStyle(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600)),
+                                  subtitle: Text(
+                                      ThemeManager().isDarkMode.value
+                                          ? 'Dark'
+                                          : 'Light',
+                                      style: TextStyle(
+                                          color: Theme.of(context).hintColor,
+                                          fontSize: 11)),
+                                  value: ThemeManager().isDarkMode.value,
+                                  onChanged: (val) {
+                                    ThemeManager().toggleTheme();
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                          Divider(
+                              color: Theme.of(context).dividerColor, height: 1),
+
+                          // ── Privacy (expandable) ────────────────────────────────────────
+                          _buildExpandableTile(
+                            icon: Icons.public,
+                            label: 'Privacy',
+                            expanded: _privacyExpanded,
+                            onTap: () => setState(
+                                () => _privacyExpanded = !_privacyExpanded),
+                            children: [
+                              _buildSubAction(
+                                icon: Icons.delete_outline,
+                                label: 'Remove all my account data',
+                                onTap: () => _confirmDeleteData(context),
+                              ),
+                            ],
+                          ),
+                          Divider(
+                              color: Theme.of(context).dividerColor, height: 1),
+
+                          // ── Contact Support ─────────────────────────────────────────────
+                          _buildNavigationTile(
+                            icon: Icons.headset_mic,
+                            label: 'Contact support',
+                            onTap: () {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content:
+                                        Text('Support: contact@dhaav.app')),
+                              );
+                            },
+                          ),
+                          Divider(
+                              color: Theme.of(context).dividerColor, height: 1),
+
+                          // ---------------- Developer Options ----------------------------------
+                          if (isAdmin) ...[
+                            _buildNavigationTile(
+                              icon: Icons.developer_board,
+                              label: 'Developer: Inject Mock Data',
+                              onTap: () async {
+                                final uid =
+                                    FirebaseAuth.instance.currentUser?.uid;
+                                if (uid != null) {
+                                  await MockDataService()
+                                      .generateMockData(context, uid);
+                                  mapRefreshNotifier.value++;
+                                }
+                              },
+                            ),
+                            _buildNavigationTile(
+                              icon: Icons.delete_forever,
+                              label: 'Developer: Clear Mock Data',
+                              onTap: () async {
+                                final uid =
+                                    FirebaseAuth.instance.currentUser?.uid;
+                                if (uid != null) {
+                                  await MockDataService()
+                                      .clearMockData(context, uid);
+                                  mapRefreshNotifier.value++;
+                                }
+                              },
+                            ),
+                            _buildNavigationTile(
+                              icon: Icons.warning_amber_rounded,
+                              label: 'Developer: Simulate Loss',
+                              onTap: () async {
+                                final uid =
+                                    FirebaseAuth.instance.currentUser?.uid;
+                                if (uid != null) {
+                                  await MockDataService()
+                                      .simulateTerritoryLoss(context, uid);
+                                  mapRefreshNotifier.value++;
+                                }
+                              },
+                            ),
+                            _buildNavigationTile(
+                              icon: Icons.dangerous,
+                              label: 'Developer: Alpha Attack (Partial)',
+                              onTap: () async {
+                                final shape = await showDialog<String>(
+                                  context: context,
+                                  builder: (context) => SimpleDialog(
+                                    title: const Text('Select Attack Shape'),
+                                    children: [
+                                      SimpleDialogOption(
+                                        onPressed: () =>
+                                            Navigator.pop(context, 'circle'),
+                                        child: const Text('Circle'),
+                                      ),
+                                      SimpleDialogOption(
+                                        onPressed: () =>
+                                            Navigator.pop(context, 'figure8'),
+                                        child: const Text('Figure 8 (Peanut)'),
+                                      ),
+                                      SimpleDialogOption(
+                                        onPressed: () =>
+                                            Navigator.pop(context, 'star'),
+                                        child: const Text('Star (Jagged Path)'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+
+                                if (shape != null && context.mounted) {
+                                  await MockDataService().simulateAlphaAttack(
+                                      context,
+                                      FirebaseAuth.instance.currentUser!.uid,
+                                      shape: shape);
+                                  mapRefreshNotifier.value++;
+                                }
+                              },
+                            ),
+                            _buildNavigationTile(
+                              icon: Icons.bug_report,
+                              label: 'Developer: Show Map Debug',
+                              onTap: () async {
+                                await DebugHelper.analyzeTerritories(context);
+                              },
+                            ),
+                            Divider(
+                                color: Theme.of(context).dividerColor,
+                                height: 1),
+                          ],
+
+                          SizedBox(height: 24),
+
+                          // ── Sign Out ────────────────────────────────────────────────────
+                          Center(
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(
+                                      color: Theme.of(context).dividerColor),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                ),
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  FirebaseAuth.instance.signOut();
+                                },
+                                icon: Icon(Icons.logout,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface),
+                                label: Text('Sign out',
+                                    style: GoogleFonts.inter(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface,
+                                        fontWeight: FontWeight.bold)),
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 12),
+
+                          // ── Delete Account ──────────────────────────────────────────────
+                          Center(
+                            child: TextButton(
+                              onPressed: () => _confirmDeleteAccount(context),
+                              child: Text(
+                                'Delete account',
+                                style: GoogleFonts.inter(
+                                  color: AppColors.errorRed,
+                                  fontWeight: FontWeight.bold,
+                                  decoration: TextDecoration.underline,
+                                  decorationColor: AppColors.errorRed,
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 32),
                         ],
                       ),
                     );
-
-                    if (shape != null && context.mounted) {
-                      await MockDataService().simulateAlphaAttack(context, FirebaseAuth.instance.currentUser!.uid, shape: shape);
-                      mapRefreshNotifier.value++;
-                    }
                   },
                 ),
-                _buildNavigationTile(
-                  icon: Icons.bug_report,
-                  label: 'Developer: Show Map Debug',
-                  onTap: () async {
-                    
-                    await DebugHelper.analyzeTerritories(context);
-                  },
-                ),
-                Divider(color: Theme.of(context).dividerColor, height: 1),
-              ],
-
-              SizedBox(height: 24),
-
-              // ── Sign Out ────────────────────────────────────────────────────
-              Center(
-                child: SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: Theme.of(context).dividerColor),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    onPressed: () {
-                      Navigator.pop(context);
-                      FirebaseAuth.instance.signOut();
-                    },
-                    icon: Icon(Icons.logout, color: Theme.of(context).colorScheme.onSurface),
-                    label: Text('Sign out', style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold)),
-                  ),
-                ),
-              ),
-              SizedBox(height: 12),
-
-              // ── Delete Account ──────────────────────────────────────────────
-              Center(
-                child: TextButton(
-                  onPressed: () => _confirmDeleteAccount(context),
-                  child: Text(
-                    'Delete account',
-                    style: GoogleFonts.inter(
-                      color: AppColors.errorRed,
-                      fontWeight: FontWeight.bold,
-                      decoration: TextDecoration.underline,
-                      decorationColor: AppColors.errorRed,
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(height: 32),
-            ],
-          ),
-                  );
-                },
-              ),
-            );
-          },
-        );
-      }
-    );
+              );
+            },
+          );
+        });
   }
 
   // ─── Tile Builders ────────────────────────────────────────────────────
 
-  Widget _buildNavigationTile({required IconData icon, required String label, required VoidCallback onTap}) {
+  Widget _buildNavigationTile(
+      {required IconData icon,
+      required String label,
+      required VoidCallback onTap}) {
     return Material(
       color: Colors.transparent,
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(vertical: 4),
         leading: Icon(icon, color: Theme.of(context).hintColor),
-        title: Text(label, style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontSize: 15)),
+        title: Text(label,
+            style: GoogleFonts.inter(
+                color: Theme.of(context).colorScheme.onSurface, fontSize: 15)),
         trailing: Icon(Icons.chevron_right, color: Theme.of(context).hintColor),
         onTap: () {
           HapticFeedback.lightImpact();
@@ -426,12 +490,18 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
           color: Colors.transparent,
           child: ListTile(
             contentPadding: const EdgeInsets.symmetric(vertical: 4),
-            leading: Icon(icon, color: expanded ? Colors.white : Theme.of(context).hintColor),
-            title: Text(label, style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontWeight: expanded ? FontWeight.bold : FontWeight.normal, fontSize: 15)),
+            leading: Icon(icon,
+                color: expanded ? Colors.white : Theme.of(context).hintColor),
+            title: Text(label,
+                style: GoogleFonts.inter(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontWeight: expanded ? FontWeight.bold : FontWeight.normal,
+                    fontSize: 15)),
             trailing: AnimatedRotation(
               turns: expanded ? 0.5 : 0,
               duration: const Duration(milliseconds: 200),
-              child: Icon(Icons.keyboard_arrow_down, color: Theme.of(context).hintColor),
+              child: Icon(Icons.keyboard_arrow_down,
+                  color: Theme.of(context).hintColor),
             ),
             onTap: () {
               HapticFeedback.lightImpact();
@@ -449,31 +519,47 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
             ),
             child: Column(children: children),
           ),
-          crossFadeState: expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+          crossFadeState:
+              expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
           duration: const Duration(milliseconds: 250),
         ),
       ],
     );
   }
 
-  Widget _buildSubSection({required String title, required String subtitle, required VoidCallback onTap}) {
+  Widget _buildSubSection(
+      {required String title,
+      required String subtitle,
+      required VoidCallback onTap}) {
     return Material(
       color: Colors.transparent,
       child: ListTile(
-        title: Text(title, style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 14)),
-        subtitle: Text(subtitle, style: GoogleFonts.inter(color: Theme.of(context).colorScheme.primary, fontSize: 12)),
+        title: Text(title,
+            style: GoogleFonts.inter(
+                color: Theme.of(context).colorScheme.onSurface,
+                fontWeight: FontWeight.bold,
+                fontSize: 14)),
+        subtitle: Text(subtitle,
+            style: GoogleFonts.inter(
+                color: Theme.of(context).colorScheme.primary, fontSize: 12)),
         onTap: onTap,
       ),
     );
   }
 
-  Widget _buildSubAction({required IconData icon, required String label, required VoidCallback onTap}) {
+  Widget _buildSubAction(
+      {required IconData icon,
+      required String label,
+      required VoidCallback onTap}) {
     return Material(
       color: Colors.transparent,
       child: ListTile(
         leading: Icon(icon, color: Theme.of(context).hintColor, size: 20),
-        title: Text(label, style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontSize: 14)),
-        trailing: Icon(Icons.chevron_right, color: Theme.of(context).hintColor, size: 18),
+        title: Text(label,
+            style: GoogleFonts.inter(
+                color: Theme.of(context).colorScheme.onSurface, fontSize: 14)),
+        trailing: Icon(Icons.chevron_right,
+            color: Theme.of(context).hintColor, size: 18),
         onTap: onTap,
       ),
     );
@@ -486,13 +572,19 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
       context: ctx,
       builder: (dialogCtx) => AlertDialog(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Theme.of(context).colorScheme.primary)),
-        title: Text('Manage Notifications', style: GoogleFonts.orbitron(color: Theme.of(context).colorScheme.onSurface, fontSize: 16)),
-        content: Material(color: Colors.transparent, child: _NotificationSettingsBody()),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Theme.of(context).colorScheme.primary)),
+        title: Text('Manage Notifications',
+            style: GoogleFonts.orbitron(
+                color: Theme.of(context).colorScheme.onSurface, fontSize: 16)),
+        content: Material(
+            color: Colors.transparent, child: _NotificationSettingsBody()),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogCtx).pop(),
-            child: Text('Done', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+            child: Text('Done',
+                style: TextStyle(color: Theme.of(context).colorScheme.primary)),
           ),
         ],
       ),
@@ -504,13 +596,19 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
       context: ctx,
       builder: (dialogCtx) => AlertDialog(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Theme.of(context).colorScheme.primary)),
-        title: Text('Units & Measurement', style: GoogleFonts.orbitron(color: Theme.of(context).colorScheme.onSurface, fontSize: 16)),
-        content: Material(color: Colors.transparent, child: _UnitSettingsBody()),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Theme.of(context).colorScheme.primary)),
+        title: Text('Units & Measurement',
+            style: GoogleFonts.orbitron(
+                color: Theme.of(context).colorScheme.onSurface, fontSize: 16)),
+        content:
+            Material(color: Colors.transparent, child: _UnitSettingsBody()),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogCtx).pop(),
-            child: Text('Done', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+            child: Text('Done',
+                style: TextStyle(color: Theme.of(context).colorScheme.primary)),
           ),
         ],
       ),
@@ -522,14 +620,21 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
       context: ctx,
       builder: (dialogCtx) => AlertDialog(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: AppColors.errorRed)),
-        title: Text('Delete Account Data', style: GoogleFonts.orbitron(color: AppColors.errorRed, fontSize: 16)),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: AppColors.errorRed)),
+        title: Text('Delete Account Data',
+            style:
+                GoogleFonts.orbitron(color: AppColors.errorRed, fontSize: 16)),
         content: Text(
           'This will permanently remove all your run history, territories, and stats. This action cannot be undone.',
           style: TextStyle(color: Theme.of(context).hintColor),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(dialogCtx).pop(), child: Text('Cancel', style: TextStyle(color: Theme.of(context).hintColor))),
+          TextButton(
+              onPressed: () => Navigator.of(dialogCtx).pop(),
+              child: Text('Cancel',
+                  style: TextStyle(color: Theme.of(context).hintColor))),
           TextButton(
             onPressed: () async {
               Navigator.of(dialogCtx).pop();
@@ -538,100 +643,108 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
                 final uid = FirebaseAuth.instance.currentUser?.uid;
                 if (uid != null) {
                   final db = FirebaseFirestore.instance;
-                  final batch = db.batch();
+                  final dhaavId = await UserService().fetchDhaavId(uid);
                   
+                  if (dhaavId == null) throw Exception('Dhaav ID not found for deletion');
+                  
+                  final batch = db.batch();
+
                   // 1. Find all physical runs to delete and calculate RP to deduct
                   int rpToRemove = 0;
-                  final runsSnapshot = await db.collection('RunHistory').where('owner_id', isEqualTo: uid).get();
+                  final runsSnapshot = await db
+                      .collection('RunHistory')
+                      .where('owner_id', isEqualTo: dhaavId)
+                      .get();
                   for (var doc in runsSnapshot.docs) {
                     final data = doc.data();
-                    final distance = (data['totalDistanceKm'] ?? 0.0).toDouble();
-                    
-                    if (distance > 0) { // Keep the 0.0km Welcome Bonus!
+                    final distance =
+                        (data['totalDistanceKm'] ?? 0.0).toDouble();
+
+                    if (distance > 0) {
+                      // Keep the 0.0km Welcome Bonus!
                       batch.delete(doc.reference);
                       rpToRemove += (data['totalRP'] as num?)?.toInt() ?? 0;
                     }
                   }
-                  
+
                   // 2. Delete all territories owned by user
-                  final territorySnapshot = await db.collection('PolygonTerritories').where('owner_id', isEqualTo: uid).get();
+                  final territorySnapshot = await db
+                      .collection('PolygonTerritories')
+                      .where('owner_id', isEqualTo: dhaavId)
+                      .get();
                   for (var doc in territorySnapshot.docs) {
+                    final data = doc.data();
+                    rpToRemove += (data['rp'] as num?)?.toInt() ?? 0;
                     batch.delete(doc.reference);
                   }
-                  
-                  // 3. Deduct RP from user balance (and clean up old fields)
-                  batch.update(db.collection('Users').doc(uid), {
-                    if (rpToRemove > 0) 'rpBalance': FieldValue.increment(-rpToRemove),
+
+                  // 3. Delete battle history
+                  final battlesSnapshot = await db
+                      .collection('BattleHistory')
+                      .where('participants', arrayContains: dhaavId)
+                      .get();
+                  for (var doc in battlesSnapshot.docs) {
+                    batch.delete(doc.reference);
+                  }
+
+                  // 4. Deduct RP from user balance (and clean up old fields)
+                  batch.update(db.collection('Users').doc(dhaavId), {
+                    if (rpToRemove > 0) ...{
+                      'rpBalance': FieldValue.increment(-rpToRemove),
+                      'rpGained': FieldValue.increment(-rpToRemove),
+                      'weeklyRpGained': FieldValue.increment(-rpToRemove),
+                      'totalRpEarned': FieldValue.increment(-rpToRemove),
+                    },
                     'stats': FieldValue.delete(),
                     'runHistory': FieldValue.delete(),
                     'territories': FieldValue.delete(),
                   });
-                  
+
                   await batch.commit();
                 }
-                
+
                 // Clear local run history
                 RunScreen.runHistory.clear();
                 RunScreen.historyNotifier.value++;
 
                 if (ctx.mounted) {
-                  ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Account data deleted.')));
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                      const SnackBar(content: Text('Account data deleted.')));
                 }
               } catch (e) {
                 debugPrint('Failed to delete user data: $e');
               }
             },
-            child: Text('Delete', style: TextStyle(color: AppColors.errorRed, fontWeight: FontWeight.bold)),
+            child: Text('Delete',
+                style: TextStyle(
+                    color: AppColors.errorRed, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
     );
   }
 
-  void _toggleAnonymous(BuildContext ctx) {
-    final bool newAnonymousState = !_isAnonymous;
-    showDialog(
-      context: ctx,
-      builder: (dialogCtx) => AlertDialog(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Theme.of(context).colorScheme.secondary)),
-        title: Text(newAnonymousState ? 'Go Anonymous' : 'Become Visible', style: GoogleFonts.orbitron(color: Theme.of(context).colorScheme.secondary, fontSize: 16)),
-        content: Text(
-          newAnonymousState 
-              ? 'Your profile will be hidden from all leaderboards. Other players will not be able to see you. You can undo this anytime.'
-              : 'Your profile will become visible on the leaderboards again.',
-          style: TextStyle(color: Theme.of(context).hintColor),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(dialogCtx).pop(), child: Text('Cancel', style: TextStyle(color: Theme.of(context).hintColor))),
-          TextButton(
-            onPressed: () {
-              _setAnonymousState(newAnonymousState);
-              Navigator.of(dialogCtx).pop();
-              ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
-                content: Text(newAnonymousState ? 'You are now anonymous.' : 'You are now visible.')
-              ));
-            },
-            child: Text(newAnonymousState ? 'Go Anonymous' : 'Become Visible', style: TextStyle(color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _confirmDeleteAccount(BuildContext ctx) {
     showDialog(
       context: ctx,
       builder: (dialogCtx) => AlertDialog(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: AppColors.errorRed)),
-        title: Text('DELETE ACCOUNT', style: GoogleFonts.orbitron(color: AppColors.errorRed, fontSize: 16)),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: AppColors.errorRed)),
+        title: Text('DELETE ACCOUNT',
+            style:
+                GoogleFonts.orbitron(color: AppColors.errorRed, fontSize: 16)),
         content: Text(
           'This will permanently delete your account, including all data, runs, territories, and stats. This cannot be reversed.',
           style: TextStyle(color: Theme.of(context).hintColor),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(dialogCtx).pop(), child: Text('Cancel', style: TextStyle(color: Theme.of(context).hintColor))),
+          TextButton(
+              onPressed: () => Navigator.of(dialogCtx).pop(),
+              child: Text('Cancel',
+                  style: TextStyle(color: Theme.of(context).hintColor))),
           TextButton(
             onPressed: () async {
               Navigator.of(dialogCtx).pop();
@@ -644,7 +757,9 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
                 await FirebaseAuth.instance.signOut();
               }
             },
-            child: Text('Delete Forever', style: TextStyle(color: AppColors.errorRed, fontWeight: FontWeight.bold)),
+            child: Text('Delete Forever',
+                style: TextStyle(
+                    color: AppColors.errorRed, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -656,7 +771,8 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
 
 class _NotificationSettingsBody extends StatefulWidget {
   @override
-  State<_NotificationSettingsBody> createState() => _NotificationSettingsBodyState();
+  State<_NotificationSettingsBody> createState() =>
+      _NotificationSettingsBodyState();
 }
 
 class _NotificationSettingsBodyState extends State<_NotificationSettingsBody> {
@@ -674,7 +790,8 @@ class _NotificationSettingsBodyState extends State<_NotificationSettingsBody> {
   Future<void> _loadSettings() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
-    final doc = await FirebaseFirestore.instance.collection('Users').doc(uid).get();
+    final doc =
+        await FirebaseFirestore.instance.collection('Users').doc(uid).get();
     if (doc.exists && doc.data() != null) {
       final settings = doc.data()?['settings'] ?? {};
       if (mounted) {
@@ -701,19 +818,27 @@ class _NotificationSettingsBodyState extends State<_NotificationSettingsBody> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _buildSwitch('Territory alerts', 'Get notified when someone captures your territory', _territoryAlerts, (v) {
+        _buildSwitch(
+            'Territory alerts',
+            'Get notified when someone captures your territory',
+            _territoryAlerts, (v) {
           setState(() => _territoryAlerts = v);
           _saveSetting('territoryAlerts', v);
         }),
-        _buildSwitch('Run reminders', 'Daily motivation to keep running', _runReminders, (v) {
+        _buildSwitch(
+            'Run reminders', 'Daily motivation to keep running', _runReminders,
+            (v) {
           setState(() => _runReminders = v);
           _saveSetting('runReminders', v);
         }),
-        _buildSwitch('Leaderboard updates', 'Weekly ranking changes', _leaderboardUpdates, (v) {
+        _buildSwitch('Leaderboard updates', 'Weekly ranking changes',
+            _leaderboardUpdates, (v) {
           setState(() => _leaderboardUpdates = v);
           _saveSetting('leaderboardUpdates', v);
         }),
-        _buildSwitch('Social', 'Friend requests and squad invites', _socialNotifications, (v) {
+        _buildSwitch(
+            'Social', 'Friend requests and squad invites', _socialNotifications,
+            (v) {
           setState(() => _socialNotifications = v);
           _saveSetting('socialNotifications', v);
         }),
@@ -721,12 +846,18 @@ class _NotificationSettingsBodyState extends State<_NotificationSettingsBody> {
     );
   }
 
-  Widget _buildSwitch(String title, String subtitle, bool value, Function(bool) onChanged) {
+  Widget _buildSwitch(
+      String title, String subtitle, bool value, Function(bool) onChanged) {
     return SwitchListTile(
       contentPadding: EdgeInsets.zero,
       activeThumbColor: Theme.of(context).colorScheme.primary,
-      title: Text(title, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
-      subtitle: Text(subtitle, style: TextStyle(color: Theme.of(context).hintColor, fontSize: 11)),
+      title: Text(title,
+          style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontSize: 14,
+              fontWeight: FontWeight.w600)),
+      subtitle: Text(subtitle,
+          style: TextStyle(color: Theme.of(context).hintColor, fontSize: 11)),
       value: value,
       onChanged: onChanged,
     );
@@ -752,7 +883,8 @@ class _UnitSettingsBodyState extends State<_UnitSettingsBody> {
   Future<void> _loadSettings() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
-    final doc = await FirebaseFirestore.instance.collection('Users').doc(uid).get();
+    final doc =
+        await FirebaseFirestore.instance.collection('Users').doc(uid).get();
     if (doc.exists && doc.data() != null) {
       final settings = doc.data()?['settings'] ?? {};
       if (mounted) {
@@ -779,8 +911,11 @@ class _UnitSettingsBodyState extends State<_UnitSettingsBody> {
         RadioListTile<String>(
           contentPadding: EdgeInsets.zero,
           activeColor: Theme.of(context).colorScheme.primary,
-          title: Text('Kilometres & metres', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-          subtitle: Text('Metric system', style: TextStyle(color: Theme.of(context).hintColor, fontSize: 12)),
+          title: Text('Kilometres & metres',
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+          subtitle: Text('Metric system',
+              style:
+                  TextStyle(color: Theme.of(context).hintColor, fontSize: 12)),
           value: 'metric',
           groupValue: _selectedUnit,
           onChanged: (v) {
@@ -791,8 +926,11 @@ class _UnitSettingsBodyState extends State<_UnitSettingsBody> {
         RadioListTile<String>(
           contentPadding: EdgeInsets.zero,
           activeColor: Theme.of(context).colorScheme.primary,
-          title: Text('Miles & feet', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-          subtitle: Text('Imperial system', style: TextStyle(color: Theme.of(context).hintColor, fontSize: 12)),
+          title: Text('Miles & feet',
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+          subtitle: Text('Imperial system',
+              style:
+                  TextStyle(color: Theme.of(context).hintColor, fontSize: 12)),
           value: 'imperial',
           groupValue: _selectedUnit,
           onChanged: (v) {

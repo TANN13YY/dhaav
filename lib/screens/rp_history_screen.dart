@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/run_history_service.dart';
 import '../services/run_tracker.dart';
+import '../services/user_service.dart';
 import '../theme/app_colors.dart';
 
 class RPHistoryScreen extends StatefulWidget {
@@ -30,8 +31,14 @@ class _RPHistoryScreenState extends State<RPHistoryScreen> {
     }
 
     try {
-      final allRuns = await RunHistoryService().getUserRuns(uid);
-      final rpRuns = allRuns.where((run) => run.totalRP > 0).toList();
+      final dhaavId = await UserService().fetchDhaavId(uid);
+      if (dhaavId == null) {
+        if (mounted) setState(() => _isLoading = false);
+        return;
+      }
+
+      final allRuns = await RunHistoryService().getUserRuns(dhaavId);
+      final rpRuns = allRuns.where((run) => run.totalRP > 0 && !run.isMock).toList();
       
       if (mounted) {
         setState(() {

@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../services/user_service.dart';
+import '../theme/theme_manager.dart';
 import '../models/battle_event.dart';
 import '../theme/app_colors.dart';
 import '../services/territory_service.dart';
@@ -18,6 +20,7 @@ class _LocalBattlesScreenState extends State<LocalBattlesScreen> {
   bool _isLoading = true;
   List<BattleEvent> _battles = [];
   Map<String, String> _userNames = {};
+  String? _currentDhaavId;
 
   @override
   void initState() {
@@ -33,9 +36,17 @@ class _LocalBattlesScreenState extends State<LocalBattlesScreen> {
     }
 
     try {
+      final dhaavId = await UserService().fetchDhaavId(uid);
+      if (dhaavId == null) {
+        if (mounted) setState(() => _isLoading = false);
+        return;
+      }
+      
+      _currentDhaavId = dhaavId;
+      
       final snapshot = await FirebaseFirestore.instance
           .collection('BattleHistory')
-          .where('participants', arrayContains: uid)
+          .where('participants', arrayContains: dhaavId)
           .get();
 
       final allBattles = snapshot.docs.map((doc) => BattleEvent.fromFirestore(doc)).toList();
@@ -48,8 +59,8 @@ class _LocalBattlesScreenState extends State<LocalBattlesScreen> {
       // Fetch opponent usernames
       Set<String> uidsToFetch = {};
       for (var b in battles) {
-        if (b.attackerId != uid) uidsToFetch.add(b.attackerId);
-        if (b.defenderId != uid) uidsToFetch.add(b.defenderId);
+        if (b.attackerId != dhaavId) uidsToFetch.add(b.attackerId);
+        if (b.defenderId != dhaavId) uidsToFetch.add(b.defenderId);
       }
 
       Map<String, String> fetchedNames = {};
@@ -125,7 +136,7 @@ class _LocalBattlesScreenState extends State<LocalBattlesScreen> {
                   itemCount: _battles.length,
                   itemBuilder: (context, index) {
                     final battle = _battles[index];
-                    final isAttacker = battle.attackerId == uid;
+                    final isAttacker = battle.attackerId == _currentDhaavId;
                     
                     final dateStr = '${battle.timestamp.day}/${battle.timestamp.month}/${battle.timestamp.year}';
                     

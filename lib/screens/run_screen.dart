@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart' as geo;
@@ -11,6 +12,8 @@ import '../services/location_service.dart';
 import '../services/territory_service.dart';
 import '../services/run_tracker.dart';
 import '../services/run_history_service.dart';
+import '../services/mock_data_service.dart';
+import '../services/user_service.dart';
 import '../theme/theme_manager.dart';
 import 'map_radar_screen.dart' show mapRefreshNotifier;
 
@@ -186,6 +189,10 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
       final territories = await TerritoryService().getNearbyTerritories(lat, lng);
       
       final currentUid = FirebaseAuth.instance.currentUser?.uid;
+      String? currentDhaavId;
+      if (currentUid != null) {
+        currentDhaavId = await UserService().fetchDhaavId(currentUid);
+      }
       
       _polygonManager?.deleteAll();
       if (territories.isEmpty) {
@@ -196,7 +203,7 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
       List<PolygonAnnotationOptions> polygons = [];
 
       for (var t in territories) {
-        final isMine = t.ownerId == currentUid;
+        final isMine = t.ownerId == currentDhaavId;
         final coords = t.coordinates.map((p) => Position(p[1], p[0])).toList();
         
         polygons.add(PolygonAnnotationOptions(
@@ -292,13 +299,19 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
         final awardedRP = (res.data['awardedRP'] as num?)?.toInt() ?? 0;
 
         if (!result.isBusted && awardedRP > 0 && result.isClosedLoop) {
-          // Process polygon intersections and submit territory (writes to PolygonTerritories)
-          await TerritoryService().submitCustomTerritory(
-            pathCoordinates: result.pathCoordinates,
-            areaM2: result.areaM2,
-            userId: uid,
-            earnedRP: awardedRP, // Use server validated RP
-          );
+          // Fetch dhaavId
+          final userQuery = await FirebaseFirestore.instance.collection('Users').where('authUid', isEqualTo: uid).limit(1).get();
+          if (userQuery.docs.isNotEmpty) {
+            final dhaavId = userQuery.docs.first.id;
+            
+            // Process polygon intersections and submit territory (writes to PolygonTerritories)
+            await TerritoryService().submitCustomTerritory(
+              pathCoordinates: result.pathCoordinates,
+              areaM2: result.areaM2,
+              userId: dhaavId,
+              earnedRP: awardedRP, // Use server validated RP
+            );
+          }
         }
         
         // Refresh territories

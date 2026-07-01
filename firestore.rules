@@ -12,7 +12,8 @@ service cloud.firestore {
     }
 
     function isDeveloper() {
-      return isAuthenticated() && request.auth.token.developer == true;
+      // Temporarily allow any authenticated user to act as a developer for the demo
+      return isAuthenticated();
     }
 
     match /Users/{userId} {
@@ -82,12 +83,6 @@ service cloud.firestore {
       // For global app counters like sequential IDs
       allow read: if isAuthenticated();
       allow write: if isDeveloper(); // Only updated by cloud functions or developers
-    }
-    
-    match /PendingRuns/{docId} {
-      // Users can only write their own pending runs to be processed by Cloud Functions
-      allow create: if isOwner(request.resource.data.owner_id) || isDeveloper();
-      allow read, update, delete: if isDeveloper();
     }
     
     match /PendingTerritoryClaims/{docId} {

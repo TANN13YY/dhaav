@@ -17,16 +17,16 @@ class HomeMapOverlay extends StatelessWidget {
     final topPadding = MediaQuery.of(context).padding.top + 16;
     final user = FirebaseAuth.instance.currentUser;
     
-    return StreamBuilder<DocumentSnapshot>(
-      stream: user != null ? FirebaseFirestore.instance.collection('Users').doc(user.uid).snapshots() : null,
+    return StreamBuilder<QuerySnapshot>(
+      stream: user != null ? FirebaseFirestore.instance.collection('Users').where('authUid', isEqualTo: user.uid).limit(1).snapshots() : null,
       builder: (context, snapshot) {
         String displayUsername = user?.email?.split('@').first ?? 'U';
         String initials = displayUsername.isNotEmpty 
             ? displayUsername.substring(0, displayUsername.length >= 2 ? 2 : 1).toUpperCase() 
             : 'U';
 
-        if (snapshot.hasData && snapshot.data!.data() != null) {
-          final data = snapshot.data!.data() as Map<String, dynamic>;
+        if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+          final data = snapshot.data!.docs.first.data() as Map<String, dynamic>;
           String firstName = data['firstName'] ?? '';
           String lastName = data['lastName'] ?? '';
           
@@ -42,8 +42,8 @@ class HomeMapOverlay extends StatelessWidget {
         
         // Determine if we need to show notification dot
         bool showNotificationDot = false;
-        if (snapshot.hasData && snapshot.data!.exists) {
-          final data = snapshot.data!.data() as Map<String, dynamic>;
+        if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+          final data = snapshot.data!.docs.first.data() as Map<String, dynamic>;
           showNotificationDot = !(data['welcomeRPClaimed'] ?? false);
         }
 

@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/territory_service.dart';
 import '../theme/app_colors.dart';
+import '../services/user_service.dart';
 import 'territory_map_screen.dart';
 
 class MyTerritoriesScreen extends StatefulWidget {
@@ -30,7 +31,13 @@ class _MyTerritoriesScreenState extends State<MyTerritoriesScreen> {
     }
 
     try {
-      final territories = await TerritoryService().getUserTerritories(uid);
+      final dhaavId = await UserService().fetchDhaavId(uid);
+      if (dhaavId == null) {
+        if (mounted) setState(() => _isLoading = false);
+        return;
+      }
+      
+      final territories = await TerritoryService().getUserTerritories(dhaavId);
       if (mounted) {
         setState(() {
           _territories = territories;

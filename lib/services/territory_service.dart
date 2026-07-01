@@ -297,8 +297,7 @@ class TerritoryService {
     });
 
     try {
-      // Fire and forget batch for offline support
-      batch.commit();
+      await batch.commit();
       log('Successfully queued Polygon territory via Pending Claim for offline support.');
     } catch (e) {
       log('Error submitting territory batch: $e');

@@ -21,6 +21,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _usernameCtrl;
   String _dob = 'Add a DOB';
   String _gender = 'Prefer not to say';
+  String _dhaavId = '';
 
   @override
   void initState() {
@@ -36,9 +37,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       return;
     }
     try {
-      final doc = await FirebaseFirestore.instance.collection('Users').doc(uid).get();
-      if (doc.exists && doc.data() != null) {
-        final data = doc.data()!;
+      final query = await FirebaseFirestore.instance.collection('Users').where('authUid', isEqualTo: uid).limit(1).get();
+      if (query.docs.isNotEmpty) {
+        final doc = query.docs.first;
+        final data = doc.data();
+        _dhaavId = doc.id;
         _firstNameCtrl = TextEditingController(text: data['firstName'] ?? '');
         _lastNameCtrl = TextEditingController(text: data['lastName'] ?? '');
         _usernameCtrl = TextEditingController(text: data['username'] ?? '');
@@ -138,26 +141,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     String username = sanitizeText(_usernameCtrl.text, 30);
     username = username.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '');
 
-    if (firstName.isEmpty || username.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('First name and username are required', style: TextStyle(color: Theme.of(context).colorScheme.onError)),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
-      return;
-    }
+    // Empty fields are allowed based on user request.
 
     setState(() => _isLoading = true);
     final uid = user?.uid;
     if (uid != null) {
-      await FirebaseFirestore.instance.collection('Users').doc(uid).set({
-        'firstName': firstName,
-        'lastName': lastName,
-        'username': username,
-        'dob': _dob,
-        'gender': _gender,
-      }, SetOptions(merge: true));
+      final query = await FirebaseFirestore.instance.collection('Users').where('authUid', isEqualTo: uid).limit(1).get();
+      if (query.docs.isNotEmpty) {
+        await query.docs.first.reference.set({
+          'firstName': firstName,
+          'lastName': lastName,
+          'username': username,
+          'dob': _dob,
+          'gender': _gender,
+        }, SetOptions(merge: true));
+      }
     }
     if (mounted) {
       Navigator.pop(context);
@@ -240,6 +238,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 }
               ),
             ),
+            if (_dhaavId.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(
+                'DHAAV ID: $_dhaavId',
+                style: GoogleFonts.orbitron(
+                  color: Theme.of(context).hintColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.5,
+                ),
+              ),
+            ],
             SizedBox(height: 32),
 
             // Name fields

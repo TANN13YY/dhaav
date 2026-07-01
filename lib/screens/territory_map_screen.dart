@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/territory_service.dart';
+import '../services/user_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/theme_manager.dart';
 
@@ -44,7 +45,12 @@ class _TerritoryMapScreenState extends State<TerritoryMapScreen> {
 
     final coords = widget.territory.coordinates.map((c) => Position(c[1], c[0])).toList();
     if (coords.isNotEmpty) {
-      final isMine = widget.territory.ownerId == FirebaseAuth.instance.currentUser?.uid;
+      final currentUid = FirebaseAuth.instance.currentUser?.uid;
+      String? dhaavId;
+      if (currentUid != null) {
+        dhaavId = await UserService().fetchDhaavId(currentUid);
+      }
+      final isMine = widget.territory.ownerId == dhaavId;
       final colorValue = isMine ? AppColors.territoryOwn.value : AppColors.territoryOther.value;
 
       await _polygonManager!.create(PolygonAnnotationOptions(
