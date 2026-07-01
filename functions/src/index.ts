@@ -194,23 +194,60 @@ export const adminSimulateTerritoryLoss = functions.https.onCall(async (data, co
   const territoryData = randomDoc.data();
   const rpToLose = territoryData.rp || 0;
 
+  const userRef = db.collection('Users').doc(targetUid);
+  const alphaRef = db.collection('Users').doc('mock_user_alpha');
+  const weekId = getWeekId();
+
   await db.runTransaction(async (transaction) => {
+    const userDoc = await transaction.get(userRef);
+    const alphaDoc = await transaction.get(alphaRef);
+
     // 1. Give territory to enemy
     transaction.update(randomDoc.ref, { owner_id: 'mock_user_alpha' });
 
     // 2. Deduct RP from user
-    const userRef = db.collection('Users').doc(targetUid);
-    transaction.update(userRef, {
-      rpBalance: admin.firestore.FieldValue.increment(-rpToLose),
-      rpLost: admin.firestore.FieldValue.increment(rpToLose)
-    });
+    if (userDoc.exists) {
+      const uData = userDoc.data() || {};
+      const uStoredWeekId = uData.currentWeekId || '';
+      
+      const uUpdates: any = {
+        rpBalance: admin.firestore.FieldValue.increment(-rpToLose),
+        rpLost: admin.firestore.FieldValue.increment(rpToLose)
+      };
+      
+      if (uStoredWeekId === weekId) {
+        uUpdates.weeklyRpLost = admin.firestore.FieldValue.increment(rpToLose);
+      } else {
+        uUpdates.currentWeekId = weekId;
+        uUpdates.weeklyRpGained = 0;
+        uUpdates.weeklyRpLost = rpToLose;
+      }
+      transaction.update(userRef, uUpdates);
+    }
 
     // 3. Give RP to enemy
-    const alphaRef = db.collection('Users').doc('mock_user_alpha');
-    transaction.set(alphaRef, {
+    const alphaUpdates: any = {
       rpBalance: admin.firestore.FieldValue.increment(rpToLose),
       totalRpEarned: admin.firestore.FieldValue.increment(rpToLose)
-    }, { merge: true });
+    };
+    
+    if (alphaDoc.exists) {
+      const aData = alphaDoc.data() || {};
+      const aStoredWeekId = aData.currentWeekId || '';
+      if (aStoredWeekId === weekId) {
+        alphaUpdates.weeklyRpGained = admin.firestore.FieldValue.increment(rpToLose);
+      } else {
+        alphaUpdates.currentWeekId = weekId;
+        alphaUpdates.weeklyRpGained = rpToLose;
+        alphaUpdates.weeklyRpLost = 0;
+      }
+    } else {
+      alphaUpdates.currentWeekId = weekId;
+      alphaUpdates.weeklyRpGained = rpToLose;
+      alphaUpdates.weeklyRpLost = 0;
+    }
+    
+    transaction.set(alphaRef, alphaUpdates, { merge: true });
   });
 
   return { success: true };
@@ -354,7 +391,12 @@ export const onPendingTerritoryClaim = functions.firestore.document('PendingTerr
       const aData = attackerDoc.data() || {};
       const aStoredWeekId = aData.currentWeekId || '';
       
-      const netChange = actualStolenRP - selfOverlapRP;
+      let baseRP = 0;
+      if (uid === 'mock_user_alpha') {
+        baseRP = Math.max(0, (data.rp || 0) - totalStolen);
+      }
+      
+      const netChange = baseRP + actualStolenRP - selfOverlapRP;
       
       if (netChange !== 0) {
         const aUpdates: any = {
