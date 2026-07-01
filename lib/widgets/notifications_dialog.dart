@@ -103,6 +103,14 @@ class _NotificationsListState extends State<_NotificationsList> {
       }
     } catch (e) {
       debugPrint("Error claiming bonus: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to claim bonus. Are you online?', style: GoogleFonts.inter()),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isClaiming = false);
     }

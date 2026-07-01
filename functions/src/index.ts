@@ -85,10 +85,11 @@ export const claimWelcomeBonus = functions.https.onCall(async (data, context) =>
     
     transaction.update(userRef, {
       rpBalance: admin.firestore.FieldValue.increment(100),
+      totalRpEarned: admin.firestore.FieldValue.increment(100),
       welcomeRPClaimed: true
     });
     
-    // Add dummy run to history
+    // Add dummy run to RunHistory so the user sees it in their RP history
     const runRef = db.collection('RunHistory').doc();
     transaction.set(runRef, {
       id: runRef.id,
