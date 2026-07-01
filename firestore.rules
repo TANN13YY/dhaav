@@ -11,12 +11,17 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == ownerId;
     }
 
+    function isDeveloper() {
+      return isAuthenticated() && request.auth.token.developer == true;
+    }
+
     match /Users/{userId} {
       // Users can read any user profile (needed for leaderboards and UI)
       allow read: if isAuthenticated();
       
       // Users can only create or update their own profile
-      allow create, update: if isOwner(userId)
+      allow create, update: if isDeveloper() || (
+        isOwner(userId)
         // Prevent setting role (reserved for custom claims or admin)
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role'])
         // Prevent direct modification of RP fields
@@ -35,20 +40,18 @@ service cloud.firestore {
         && (
              !request.resource.data.keys().hasAll(['username']) || 
              request.resource.data.username is string && request.resource.data.username.size() <= 30
-           );
+           )
+      );
            
-      allow delete: if isOwner(userId);
+      allow delete: if isOwner(userId) || isDeveloper();
     }
     
     match /PolygonTerritories/{territoryId} {
       // Anyone can read territories to see the map
       allow read: if isAuthenticated();
       
-      // Only the owner can create it
-      // RP fields shouldn't be directly set by client, but since we haven't
-      // fully migrated to Cloud Functions yet, we allow the owner to write.
-      // Once Cloud Functions are ready, this should be allow create: if false;
-      allow create: if isOwner(request.resource.data.owner_id);
+      // Only the owner can create it (or a developer for mock data)
+      allow create: if isOwner(request.resource.data.owner_id) || isDeveloper();
       
       // Allow updates/deletes if you're the owner (for self-overlap) or 
       // if it's being deleted/modified in a transaction during a battle.
@@ -56,12 +59,12 @@ service cloud.firestore {
     }
     
     match /RunHistory/{runId} {
-      allow read: if isOwner(resource.data.owner_id);
+      allow read: if isOwner(resource.data.owner_id) || isDeveloper();
       
       // Once Cloud Functions handle runs, this should be disabled
-      allow create: if isOwner(request.resource.data.owner_id);
-      allow delete: if isOwner(resource.data.owner_id);
-      allow update: if false; // Runs should be immutable once saved
+      allow create: if isOwner(request.resource.data.owner_id) || isDeveloper();
+      allow delete: if isOwner(resource.data.owner_id) || isDeveloper();
+      allow update: if isDeveloper(); // Runs should be immutable once saved
     }
     
     match /BattleHistory/{battleId} {
@@ -69,28 +72,28 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (
         request.auth.uid == resource.data.attackerId || 
         request.auth.uid == resource.data.defenderId
-      );
+      ) || isDeveloper();
       
-      allow create: if isOwner(request.resource.data.attackerId);
-      allow update, delete: if false;
+      allow create: if isOwner(request.resource.data.attackerId) || isDeveloper();
+      allow update, delete: if isDeveloper();
     }
     
     match /System/Config {
       // For global app counters like sequential IDs
       allow read: if isAuthenticated();
-      allow write: if false; // Only updated by cloud functions
+      allow write: if isDeveloper(); // Only updated by cloud functions or developers
     }
     
     match /PendingRuns/{docId} {
       // Users can only write their own pending runs to be processed by Cloud Functions
-      allow create: if isOwner(request.resource.data.owner_id);
-      allow read, update, delete: if false;
+      allow create: if isOwner(request.resource.data.owner_id) || isDeveloper();
+      allow read, update, delete: if isDeveloper();
     }
     
     match /PendingTerritoryClaims/{docId} {
       // Users can only write their own pending claims to be processed by Cloud Functions
-      allow create: if isOwner(request.resource.data.userId);
-      allow read, update, delete: if false;
+      allow create: if isOwner(request.resource.data.userId) || isDeveloper();
+      allow read, update, delete: if isDeveloper();
     }
   }
 }

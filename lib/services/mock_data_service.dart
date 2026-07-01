@@ -126,54 +126,7 @@ class MockDataService {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Clearing mock data...')));
       }
 
-      // 1. Delete all territories
-      final snapshot = await _firestore.collection('PolygonTerritories').get();
-      final batch = _firestore.batch();
-      for (var doc in snapshot.docs) {
-        batch.delete(doc.reference);
-      }
-      await batch.commit();
-
-      // Delete all RunHistory to prevent duplicate welcome bonuses and ghost runs
-      final runHistorySnapshot = await _firestore.collection('RunHistory').get();
-      for (var doc in runHistorySnapshot.docs) {
-        await doc.reference.delete();
-      }
-
-      // Delete mock battles
-      final battleSnapshot = await _firestore.collection('BattleHistory').get();
-      for (var doc in battleSnapshot.docs) {
-        await doc.reference.delete();
-      }
-
-      // 2. Reset user RP stats and initialize Alpha Bot
-      final userIds = [currentUserId, 'mock_user_alpha', 'mock_user_beta'];
-      for (var uid in userIds) {
-        if (uid == 'mock_user_alpha') {
-          await _firestore.collection('Users').doc(uid).set({
-            'firstName': 'Alpha Bot',
-            'rpBalance': 0,
-            'rpGained': 0,
-            'rpLost': 0,
-            'weeklyRpGained': 0,
-            'weeklyRpLost': 0,
-            'totalRpEarned': 0,
-            'currentWeekId': _getWeekId(),
-            'welcomeRPClaimed': false,
-          }, SetOptions(merge: true));
-        } else {
-          await _firestore.collection('Users').doc(uid).update({
-            'rpBalance': 0,
-            'rpGained': 0,
-            'rpLost': 0,
-            'weeklyRpGained': 0,
-            'weeklyRpLost': 0,
-            'totalRpEarned': 0,
-            'currentWeekId': _getWeekId(),
-            'welcomeRPClaimed': false,
-          }).catchError((_) {}); // Ignore if user doc doesn't exist
-        }
-      }
+      await FirebaseFunctions.instance.httpsCallable('adminClearMockData').call();
 
       log('Mock data cleared!');
       if (context.mounted) {
@@ -189,75 +142,27 @@ class MockDataService {
 
   Future<void> simulateTerritoryLoss(BuildContext context, String currentUserId) async {
     try {
-      final query = await _firestore.collection('PolygonTerritories')
-          .where('owner_id', isEqualTo: currentUserId)
-          .get();
-          
-      if (query.docs.isNotEmpty) {
-        final docs = query.docs;
-        final doc = docs[math.Random().nextInt(docs.length)];
-        
-        // 1. Give territory to enemy
-        await doc.reference.update({
-          'owner_id': 'mock_user_alpha',
-        });
-        
-        // 2. Deduct RP from user and give to alpha
-        final userRef = _firestore.collection('Users').doc(currentUserId);
-        final alphaRef = _firestore.collection('Users').doc('mock_user_alpha');
-        
-        await _firestore.runTransaction((tx) async {
-          // MUST DO ALL READS BEFORE ANY WRITES
-          final userSnap = await tx.get(userRef);
-          final alphaSnap = await tx.get(alphaRef);
-          
-          if (userSnap.exists) {
-            final data = userSnap.data()!;
-            final currentRp = data['rpBalance'] ?? 0;
-            final currentRpLost = data['rpLost'] ?? 0;
-            final currentWeeklyRpLost = data['weeklyRpLost'] ?? 0;
-            
-            tx.update(userRef, {
-              'rpBalance': math.max(0, (currentRp as num) - 21),
-              'rpLost': (currentRpLost as num) + 21,
-              'weeklyRpLost': (currentWeeklyRpLost as num) + 21,
-            });
-          }
-          
-          if (alphaSnap.exists) {
-            final alphaData = alphaSnap.data()!;
-            final alphaRp = alphaData['rpBalance'] ?? 0;
-            final alphaGained = alphaData['rpGained'] ?? 0;
-            final alphaWeeklyGained = alphaData['weeklyRpGained'] ?? 0;
-            
-            tx.update(alphaRef, {
-              'rpBalance': (alphaRp as num) + 21,
-              'rpGained': (alphaGained as num) + 21,
-              'weeklyRpGained': (alphaWeeklyGained as num) + 21,
-              'currentWeekId': _getWeekId(),
-            });
-          } else {
-             // Create it if it doesn't exist
-             tx.set(alphaRef, {
-                'firstName': 'Alpha Bot',
-                'rpBalance': 21,
-                'rpGained': 21,
-                'rpLost': 0,
-                'weeklyRpGained': 21,
-                'weeklyRpLost': 0,
-                'totalRpEarned': 21,
-                'currentWeekId': _getWeekId(),
-                'welcomeRPClaimed': false,
-             });
-          }
-        });
-        
-        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Simulated SPECIFIC territory loss of 21 RP!')));
-      } else {
-        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No matching territory found to lose!')));
+      final result = await FirebaseFunctions.instance.httpsCallable('adminSimulateTerritoryLoss').call({
+        'targetUid': currentUserId,
+      });
+      
+      if (result.data['success'] == false) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result.data['message'])));
+        }
+        return;
+      }
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Simulated territory loss. Map will refresh.'),
+        ));
       }
     } catch (e) {
-      log('Error simulating loss: $e');
+      log('Error simulating territory loss: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e')));
+      }
     }
   }
 

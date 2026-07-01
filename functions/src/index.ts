@@ -150,6 +150,72 @@ export const adminCreditRP = functions.https.onCall(async (data, context) => {
   return { success: true };
 });
 
+// 6. adminClearMockData: Developer mock data endpoint
+export const adminClearMockData = functions.https.onCall(async (data, context) => {
+  if (!context.auth || !context.auth.token.developer) {
+    throw new functions.https.HttpsError('permission-denied', 'Must be a developer');
+  }
+
+  const collections = ['PolygonTerritories', 'RunHistory', 'BattleHistory'];
+  for (const collectionName of collections) {
+    const snapshot = await db.collection(collectionName).get();
+    const batch = db.batch();
+    snapshot.docs.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+    await batch.commit();
+  }
+
+  return { success: true };
+});
+
+// 7. adminSimulateTerritoryLoss: Developer mock data endpoint
+export const adminSimulateTerritoryLoss = functions.https.onCall(async (data, context) => {
+  if (!context.auth || !context.auth.token.developer) {
+    throw new functions.https.HttpsError('permission-denied', 'Must be a developer');
+  }
+
+  const { targetUid } = data;
+  if (!targetUid) {
+    throw new functions.https.HttpsError('invalid-argument', 'Missing targetUid');
+  }
+
+  // Find a random territory owned by the user
+  const query = await db.collection('PolygonTerritories')
+    .where('owner_id', '==', targetUid)
+    .get();
+      
+  if (query.empty) {
+    return { success: false, message: 'No territories to lose' };
+  }
+
+  const docs = query.docs;
+  const randomDoc = docs[Math.floor(Math.random() * docs.length)];
+  const territoryData = randomDoc.data();
+  const rpToLose = territoryData.rp || 0;
+
+  await db.runTransaction(async (transaction) => {
+    // 1. Give territory to enemy
+    transaction.update(randomDoc.ref, { owner_id: 'mock_user_alpha' });
+
+    // 2. Deduct RP from user
+    const userRef = db.collection('Users').doc(targetUid);
+    transaction.update(userRef, {
+      rpBalance: admin.firestore.FieldValue.increment(-rpToLose),
+      rpLost: admin.firestore.FieldValue.increment(rpToLose)
+    });
+
+    // 3. Give RP to enemy
+    const alphaRef = db.collection('Users').doc('mock_user_alpha');
+    transaction.set(alphaRef, {
+      rpBalance: admin.firestore.FieldValue.increment(rpToLose),
+      totalRpEarned: admin.firestore.FieldValue.increment(rpToLose)
+    }, { merge: true });
+  });
+
+  return { success: true };
+});
+
 // Helper to get week ID like "2026-W26"
 function getWeekId(): string {
   const now = new Date();
