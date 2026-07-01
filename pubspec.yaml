@@ -29,6 +29,7 @@ dependencies:
   # Territory & Grid Management
   clipper2: ^0.0.3
   geocoding: ^4.0.0
+  cloud_functions: ^6.3.3
 
 dev_dependencies:
   flutter_test:

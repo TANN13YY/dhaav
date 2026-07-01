@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/run_history_service.dart';
@@ -85,28 +86,9 @@ class _NotificationsListState extends State<_NotificationsList> {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) return;
 
-      final db = FirebaseFirestore.instance;
-      
-      // Update user document
-      await db.collection('Users').doc(uid).set({
-        'rpBalance': FieldValue.increment(100),
-        'welcomeRPClaimed': true,
-      }, SetOptions(merge: true));
-
-      // Add to RunHistory
-      final dummyRun = RunResult(
-        id: db.collection('RunHistory').doc().id,
-        timestamp: DateTime.now(),
-        pathCoordinates: [],
-        totalDistanceKm: 0.0,
-        totalDuration: Duration.zero,
-        totalRP: 100,
-        averagePaceMinPerKm: 0.0,
-        isBusted: false,
-        isClosedLoop: false,
-        areaM2: 0.0,
-      );
-      await RunHistoryService().saveRunResult(uid, dummyRun);
+      // Call Cloud Function instead of direct Firestore write
+      final functions = FirebaseFunctions.instance;
+      await functions.httpsCallable('claimWelcomeBonus').call();
 
       HapticFeedback.heavyImpact();
 
@@ -120,7 +102,7 @@ class _NotificationsListState extends State<_NotificationsList> {
         );
       }
     } catch (e) {
-      debugPrint("Error claiming bonus: \$e");
+      debugPrint("Error claiming bonus: $e");
     } finally {
       if (mounted) setState(() => _isClaiming = false);
     }

@@ -121,16 +121,42 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<void> _saveProfile() async {
     HapticFeedback.lightImpact();
+    
+    // Sanitize and validate inputs
+    String sanitizeText(String text, int maxLength) {
+      String clean = text.trim();
+      if (clean.length > maxLength) {
+        clean = clean.substring(0, maxLength);
+      }
+      return clean;
+    }
+
+    final firstName = sanitizeText(_firstNameCtrl.text, 50);
+    final lastName = sanitizeText(_lastNameCtrl.text, 50);
+    
+    // Username: Alphanumeric and underscores only
+    String username = sanitizeText(_usernameCtrl.text, 30);
+    username = username.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '');
+
+    if (firstName.isEmpty || username.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('First name and username are required', style: TextStyle(color: Theme.of(context).colorScheme.onError)),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
     final uid = user?.uid;
     if (uid != null) {
       await FirebaseFirestore.instance.collection('Users').doc(uid).set({
-        'firstName': _firstNameCtrl.text,
-        'lastName': _lastNameCtrl.text,
-        'username': _usernameCtrl.text,
+        'firstName': firstName,
+        'lastName': lastName,
+        'username': username,
         'dob': _dob,
         'gender': _gender,
-        
       }, SetOptions(merge: true));
     }
     if (mounted) {

@@ -1,0 +1,84 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+  
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(ownerId) {
+      return isAuthenticated() && request.auth.uid == ownerId;
+    }
+
+    match /Users/{userId} {
+      // Users can read any user profile (needed for leaderboards and UI)
+      allow read: if isAuthenticated();
+      
+      // Users can only create or update their own profile
+      allow create, update: if isOwner(userId)
+        // Prevent setting role (reserved for custom claims or admin)
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role'])
+        // Prevent direct modification of RP fields
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+             'rpBalance', 'rpGained', 'rpLost', 'weeklyRpGained', 'weeklyRpLost', 'totalRpEarned'
+           ])
+        // Enforce basic validation on fields
+        && (
+             !request.resource.data.keys().hasAll(['firstName']) || 
+             request.resource.data.firstName is string && request.resource.data.firstName.size() <= 50
+           )
+        && (
+             !request.resource.data.keys().hasAll(['lastName']) || 
+             request.resource.data.lastName is string && request.resource.data.lastName.size() <= 50
+           )
+        && (
+             !request.resource.data.keys().hasAll(['username']) || 
+             request.resource.data.username is string && request.resource.data.username.size() <= 30
+           );
+           
+      allow delete: if isOwner(userId);
+    }
+    
+    match /PolygonTerritories/{territoryId} {
+      // Anyone can read territories to see the map
+      allow read: if isAuthenticated();
+      
+      // Only the owner can create it
+      // RP fields shouldn't be directly set by client, but since we haven't
+      // fully migrated to Cloud Functions yet, we allow the owner to write.
+      // Once Cloud Functions are ready, this should be allow create: if false;
+      allow create: if isOwner(request.resource.data.owner_id);
+      
+      // Allow updates/deletes if you're the owner (for self-overlap) or 
+      // if it's being deleted/modified in a transaction during a battle.
+      allow update, delete: if isAuthenticated();
+    }
+    
+    match /RunHistory/{runId} {
+      allow read: if isOwner(resource.data.owner_id);
+      
+      // Once Cloud Functions handle runs, this should be disabled
+      allow create: if isOwner(request.resource.data.owner_id);
+      allow delete: if isOwner(resource.data.owner_id);
+      allow update: if false; // Runs should be immutable once saved
+    }
+    
+    match /BattleHistory/{battleId} {
+      // Users can read battles where they are the attacker or defender
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.attackerId || 
+        request.auth.uid == resource.data.defenderId
+      );
+      
+      allow create: if isOwner(request.resource.data.attackerId);
+      allow update, delete: if false;
+    }
+    
+    match /System/Config {
+      // For global app counters like sequential IDs
+      allow read: if isAuthenticated();
+      allow write: if false; // Only updated by cloud functions
+    }
+  }
+}

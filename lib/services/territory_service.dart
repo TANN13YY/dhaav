@@ -1,5 +1,6 @@
 import 'dart:developer';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:clipper2/clipper2.dart';
 import 'package:geocoding/geocoding.dart';
 
@@ -163,9 +164,10 @@ class TerritoryService {
       battleLocationName = 'Lat: ${centerPoint[0].toStringAsFixed(4)}, Lng: ${centerPoint[1].toStringAsFixed(4)}';
     }
 
-    await _firestore.runTransaction((transaction) async {
+    final rpUpdates = await _firestore.runTransaction((transaction) async {
       int selfOverlapRP = 0;
       int totalStolenRP = 0;
+      List<Map<String, dynamic>> enemyDeductions = [];
       final newDocRef = _firestore.collection('PolygonTerritories').doc();
 
       // Handle Boolean Operations (Option B)
@@ -184,9 +186,8 @@ class TerritoryService {
         if (intersectionArea > 0) {
           // Calculate RP to deduct based on the NEW shape's proportion
           final double oldRatio = intersectionArea / oldClipperPath.area.abs();
-          final double newRatio = intersectionArea / newClipperPath.area.abs();
           
-          int rpToDeduct = (earnedRP * newRatio).round();
+          int rpToDeduct = (earnedRP * (intersectionArea / newClipperPath.area.abs())).round();
           if (rpToDeduct > oldPoly.rp) rpToDeduct = oldPoly.rp;
 
           // Calculate the remaining geometry for the old owner
@@ -273,8 +274,11 @@ class TerritoryService {
           if (isSelfOverlap) {
             selfOverlapRP += rpToDeduct;
           } else {
-            // Deduct RP from old owner (the enemy lost it)
-            _updateUserRP(transaction, oldPoly.ownerId, -rpToDeduct);
+            // Track deduction for enemy (applied later via Cloud Function)
+            enemyDeductions.add({
+              'enemyId': oldPoly.ownerId,
+              'rpStolen': rpToDeduct,
+            });
             // Add stolen RP to the attacker's total
             totalStolenRP += rpToDeduct;
           }
@@ -282,7 +286,6 @@ class TerritoryService {
       }
 
       int finalTerritoryRP = earnedRP + totalStolenRP;
-      int netEarnedRP = finalTerritoryRP - selfOverlapRP;
 
       // Create new territory document after knowing final RP
       transaction.set(newDocRef, {
@@ -291,51 +294,18 @@ class TerritoryService {
         'coordinates': pathCoordinates.map((c) => GeoPoint(c[0], c[1])).toList(),
       });
 
-      // Add the net new territory RP to the user's balance
-      _updateUserRP(transaction, userId, netEarnedRP);
+      return {
+        'enemyDeductions': enemyDeductions,
+        'selfOverlapRP': selfOverlapRP,
+      };
     });
 
-    log('ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Successfully submitted Polygon territory and handled overlaps.');
-  }
-
-  Future<void> creditRunRP(String uid, int rpChange) async {
-    final userRef = _firestore.collection('Users').doc(uid);
-    final weekId = _getWeekId();
-    
-    // Read the current doc to check if we need to reset weekly counters
-    final userDoc = await userRef.get();
-    final userData = userDoc.data() ?? {};
-    final storedWeekId = userData['currentWeekId'] ?? '';
-    
-    final Map<String, dynamic> updates = {
-      'rpBalance': FieldValue.increment(rpChange),
-    };
-
-    if (rpChange > 0) {
-      updates['rpGained'] = FieldValue.increment(rpChange);
-      if (storedWeekId == weekId) {
-        updates['weeklyRpGained'] = FieldValue.increment(rpChange);
-      } else {
-        // New week ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ reset weekly counters
-        updates['currentWeekId'] = weekId;
-        updates['weeklyRpGained'] = rpChange;
-        updates['weeklyRpLost'] = 0;
-      }
-    } else if (rpChange < 0) {
-      updates['rpLost'] = FieldValue.increment(-rpChange); // Store as positive
-      if (storedWeekId == weekId) {
-        updates['weeklyRpLost'] = FieldValue.increment(-rpChange);
-      } else {
-        updates['currentWeekId'] = weekId;
-        updates['weeklyRpGained'] = 0;
-        updates['weeklyRpLost'] = -rpChange;
-      }
-    }
-
     try {
-      await userRef.update(updates);
+      final functions = FirebaseFunctions.instance;
+      await functions.httpsCallable('applyTerritoryRPUpdates').call(rpUpdates);
+      log('Successfully submitted Polygon territory and updated RP via Cloud Function.');
     } catch (e) {
-      log('Error crediting RP: $e');
+      log('Error applying territory RP updates via Cloud Function: $e');
     }
   }
 
@@ -346,33 +316,6 @@ class TerritoryService {
     final dayOfYear = now.difference(DateTime(now.year, 1, 1)).inDays;
     final weekNumber = ((dayOfYear - now.weekday + jan4.weekday + 6) ~/ 7);
     return '${now.year}-W${weekNumber.toString().padLeft(2, '0')}';
-  }
-
-  void _updateUserRP(Transaction transaction, String userId, int rpChange) {
-    if (rpChange == 0) return;
-    
-    final userRef = _firestore.collection('Users').doc(userId);
-    final weekId = _getWeekId();
-    
-    // Note: We cannot easily read before write in a batch-style transaction without
-    // restructuring the whole transaction to read all users first.
-    // For simplicity in this demo, we'll use FieldValue.increment and just update
-    // the weekly counter blindly. A production app would read the user doc first.
-    final Map<String, dynamic> updates = {
-      'rpBalance': FieldValue.increment(rpChange),
-    };
-
-    if (rpChange > 0) {
-      updates['rpGained'] = FieldValue.increment(rpChange);
-      updates['weeklyRpGained'] = FieldValue.increment(rpChange);
-      updates['currentWeekId'] = weekId; // might overwrite incorrectly if week changed, but ok for MVP
-    } else {
-      updates['rpLost'] = FieldValue.increment(-rpChange);
-      updates['weeklyRpLost'] = FieldValue.increment(-rpChange);
-      updates['currentWeekId'] = weekId;
-    }
-    
-    transaction.set(userRef, updates, SetOptions(merge: true));
   }
 }
 

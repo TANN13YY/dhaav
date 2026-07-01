@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart' as geo;
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../theme/app_colors.dart';
 import '../services/location_service.dart';
@@ -275,21 +276,29 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid != null) {
       try {
-        // Always save history to the DB
-        await RunHistoryService().saveRunResult(uid, result);
+        // Submit run and RP via Cloud Function
+        final functions = FirebaseFunctions.instance;
+        final res = await functions.httpsCallable('submitRun').call({
+          'pathCoordinates': result.pathCoordinates,
+          'totalDistanceKm': result.totalDistanceKm,
+          'areaM2': result.areaM2,
+          'isClosedLoop': result.isClosedLoop,
+          'totalDurationMs': result.totalDuration.inMilliseconds,
+          'isBusted': result.isBusted,
+        });
 
-        if (!result.isBusted && result.totalRP > 0) {
-          if (result.isClosedLoop) {
+        // The Cloud Function enforces server-side RP calculation.
+        // Get the real awarded RP from the response.
+        final awardedRP = (res.data['awardedRP'] as num?)?.toInt() ?? 0;
+
+        if (!result.isBusted && awardedRP > 0 && result.isClosedLoop) {
+          // Process polygon intersections and submit territory (writes to PolygonTerritories)
           await TerritoryService().submitCustomTerritory(
             pathCoordinates: result.pathCoordinates,
             areaM2: result.areaM2,
             userId: uid,
-            earnedRP: result.totalRP,
+            earnedRP: awardedRP, // Use server validated RP
           );
-        } else {
-          // Unclosed loop, just credit RP
-          await TerritoryService().creditRunRP(uid, result.totalRP);
-        }
         }
         
         // Refresh territories

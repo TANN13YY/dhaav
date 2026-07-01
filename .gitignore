@@ -43,3 +43,7 @@ migrate.json
 
 # Firebase Configuration
 lib/firebase_options.dart
+
+# Android Keystore
+android/key.properties
+**/*.jks
