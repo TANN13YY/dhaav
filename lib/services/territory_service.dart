@@ -156,156 +156,152 @@ class TerritoryService {
         if (parts.isNotEmpty) {
           battleLocationName = parts.join(', ');
         } else {
-          battleLocationName = place.name ?? place.street ?? 'Unknown Area';
+          battleLocationName = place.name ?? 'Unknown Area';
         }
       }
     } catch (e) {
-      // Fallback on error or no connectivity
-      battleLocationName = 'Lat: ${centerPoint[0].toStringAsFixed(4)}, Lng: ${centerPoint[1].toStringAsFixed(4)}';
+      log('Error reverse geocoding: $e');
     }
 
-    final rpUpdates = await _firestore.runTransaction((transaction) async {
-      int selfOverlapRP = 0;
-      int totalStolenRP = 0;
-      List<Map<String, dynamic>> enemyDeductions = [];
-      final newDocRef = _firestore.collection('PolygonTerritories').doc();
+    final batch = _firestore.batch();
+    int selfOverlapRP = 0;
+    int totalStolenRP = 0;
+    List<Map<String, dynamic>> enemyDeductions = [];
+    final newDocRef = _firestore.collection('PolygonTerritories').doc();
 
-      // Handle Boolean Operations (Option B)
-      for (var oldPoly in nearby) {
-        final oldClipperPath = oldPoly.toClipperPath();
+    for (var oldPoly in nearby) {
+      final oldClipperPath = oldPoly.toClipperPath();
+      
+      // Calculate intersection area
+      final intersectionPaths = Clipper.intersect(
+        subject: [oldClipperPath], 
+        clip: [newClipperPath], 
+        fillRule: FillRule.nonZero
+      );
+      
+      final double intersectionArea = intersectionPaths.area.abs();
+
+      if (intersectionArea > 0) {
+        // Calculate RP to deduct based on the NEW shape's proportion
+        final double oldRatio = intersectionArea / oldClipperPath.area.abs();
         
-        // Calculate intersection area
-        final intersectionPaths = Clipper.intersect(
+        int rpToDeduct = (earnedRP * (intersectionArea / newClipperPath.area.abs())).round();
+        if (rpToDeduct > oldPoly.rp) rpToDeduct = oldPoly.rp;
+
+        // Calculate the remaining geometry for the old owner
+        final differencePaths = Clipper.difference(
           subject: [oldClipperPath], 
           clip: [newClipperPath], 
           fillRule: FillRule.nonZero
         );
         
-        final double intersectionArea = intersectionPaths.area.abs();
+        final oldDocRef = _firestore.collection('PolygonTerritories').doc(oldPoly.id);
+        final bool isSelfOverlap = (oldPoly.ownerId == userId);
 
-        if (intersectionArea > 0) {
-          // Calculate RP to deduct based on the NEW shape's proportion
-          final double oldRatio = intersectionArea / oldClipperPath.area.abs();
-          
-          int rpToDeduct = (earnedRP * (intersectionArea / newClipperPath.area.abs())).round();
-          if (rpToDeduct > oldPoly.rp) rpToDeduct = oldPoly.rp;
+        if (differencePaths.isEmpty) {
+          // The territory was completely engulfed, so we MUST deduct its full value since it gets deleted
+          rpToDeduct = oldPoly.rp;
+          batch.delete(oldDocRef);
 
-          // Calculate the remaining geometry for the old owner
-          final differencePaths = Clipper.difference(
-            subject: [oldClipperPath], 
-            clip: [newClipperPath], 
-            fillRule: FillRule.nonZero
-          );
-          
-          final oldDocRef = _firestore.collection('PolygonTerritories').doc(oldPoly.id);
-          final bool isSelfOverlap = (oldPoly.ownerId == userId);
-
-          if (differencePaths.isEmpty) {
-            // The territory was completely engulfed, so we MUST deduct its full value since it gets deleted
-            rpToDeduct = oldPoly.rp;
-            transaction.delete(oldDocRef);
-
-            if (!isSelfOverlap) {
-              // Log battle history
-              final battleDocRef = _firestore.collection('BattleHistory').doc();
-              transaction.set(battleDocRef, {
-                'attackerId': userId,
-                'defenderId': oldPoly.ownerId,
-                'rpStolen': oldPoly.rp,
-                'areaSqm': oldPoly.areaSqm,
-                'timestamp': FieldValue.serverTimestamp(),
-                'locationName': battleLocationName,
-                'type': 'engulfed',
-                'participants': [userId, oldPoly.ownerId],
-                'capturedCoordinates': oldPoly.coordinates.map((c) => GeoPoint(c[0], c[1])).toList(),
-              });
-            }
-          } else {
-            if (!isSelfOverlap) {
-              // Log battle history
-              final battleDocRef = _firestore.collection('BattleHistory').doc();
-              List<GeoPoint> intersectionGeoPoints = [];
-              if (intersectionPaths.isNotEmpty) {
-                final path = intersectionPaths.first;
-                for (final pt in path) {
-                  intersectionGeoPoints.add(GeoPoint(pt.y / clipperScale, pt.x / clipperScale));
-                }
-              }
-              transaction.set(battleDocRef, {
-                'attackerId': userId,
-                'defenderId': oldPoly.ownerId,
-                'rpStolen': rpToDeduct,
-                'areaSqm': oldPoly.areaSqm * oldRatio,
-                'timestamp': FieldValue.serverTimestamp(),
-                'locationName': battleLocationName,
-                'type': 'partial',
-                'participants': [userId, oldPoly.ownerId],
-                'capturedCoordinates': intersectionGeoPoints,
-              });
-            }
-
-            // Take the largest piece if it split into multiples
-            Path64 largestPiece = differencePaths.first;
-            double maxArea = largestPiece.area.abs();
-            for (var i = 1; i < differencePaths.length; i++) {
-              final area = differencePaths[i].area.abs();
-              if (area > maxArea) {
-                maxArea = area;
-                largestPiece = differencePaths[i];
-              }
-            }
-            
-            List<List<double>> updatedCoords = [];
-            for (final pt in largestPiece) {
-              updatedCoords.add([pt.y / clipperScale, pt.x / clipperScale]);
-            }
-            // Close the loop for GeoJSON/Mapbox
-            if (updatedCoords.isNotEmpty) {
-              updatedCoords.add(updatedCoords.first);
-            }
-
-            transaction.update(oldDocRef, {
-              'rp': oldPoly.rp - rpToDeduct,
-              'area_sqm': oldPoly.areaSqm - (oldPoly.areaSqm * oldRatio),
-              'coordinates': updatedCoords.map((c) => GeoPoint(c[0], c[1])).toList(),
+          if (!isSelfOverlap) {
+            // Log battle history
+            final battleDocRef = _firestore.collection('BattleHistory').doc();
+            batch.set(battleDocRef, {
+              'attackerId': userId,
+              'defenderId': oldPoly.ownerId,
+              'rpStolen': oldPoly.rp,
+              'areaSqm': oldPoly.areaSqm,
+              'timestamp': FieldValue.serverTimestamp(),
+              'locationName': battleLocationName,
+              'type': 'engulfed',
+              'participants': [userId, oldPoly.ownerId],
+              'capturedCoordinates': oldPoly.coordinates.map((c) => GeoPoint(c[0], c[1])).toList(),
             });
           }
-
-          if (isSelfOverlap) {
-            selfOverlapRP += rpToDeduct;
-          } else {
-            // Track deduction for enemy (applied later via Cloud Function)
-            enemyDeductions.add({
-              'enemyId': oldPoly.ownerId,
+        } else {
+          if (!isSelfOverlap) {
+            // Log battle history
+            final battleDocRef = _firestore.collection('BattleHistory').doc();
+            List<GeoPoint> intersectionGeoPoints = [];
+            if (intersectionPaths.isNotEmpty) {
+              final path = intersectionPaths.first;
+              for (final pt in path) {
+                intersectionGeoPoints.add(GeoPoint(pt.y / clipperScale, pt.x / clipperScale));
+              }
+            }
+            batch.set(battleDocRef, {
+              'attackerId': userId,
+              'defenderId': oldPoly.ownerId,
               'rpStolen': rpToDeduct,
+              'areaSqm': oldPoly.areaSqm * oldRatio,
+              'timestamp': FieldValue.serverTimestamp(),
+              'locationName': battleLocationName,
+              'type': 'partial',
+              'participants': [userId, oldPoly.ownerId],
+              'capturedCoordinates': intersectionGeoPoints,
             });
-            // Add stolen RP to the attacker's total
-            totalStolenRP += rpToDeduct;
           }
+
+          // Take the largest piece if it split into multiples
+          Path64 largestPiece = differencePaths.first;
+          double maxArea = largestPiece.area.abs();
+          for (var i = 1; i < differencePaths.length; i++) {
+            final area = differencePaths[i].area.abs();
+            if (area > maxArea) {
+              maxArea = area;
+              largestPiece = differencePaths[i];
+            }
+          }
+          
+          List<List<double>> updatedCoords = [];
+          for (final pt in largestPiece) {
+            updatedCoords.add([pt.y / clipperScale, pt.x / clipperScale]);
+          }
+          // Close the loop for GeoJSON/Mapbox
+          if (updatedCoords.isNotEmpty) {
+            updatedCoords.add(updatedCoords.first);
+          }
+
+          batch.update(oldDocRef, {
+            'rp': oldPoly.rp - rpToDeduct,
+            'area_sqm': oldPoly.areaSqm - (oldPoly.areaSqm * oldRatio),
+            'coordinates': updatedCoords.map((c) => GeoPoint(c[0], c[1])).toList(),
+          });
+        }
+
+        if (isSelfOverlap) {
+          selfOverlapRP += rpToDeduct;
+        } else {
+          // Track deduction for enemy
+          enemyDeductions.add({
+            'enemyId': oldPoly.ownerId,
+            'rpStolen': rpToDeduct,
+          });
+          totalStolenRP += rpToDeduct;
         }
       }
+    }
 
-      int finalTerritoryRP = earnedRP + totalStolenRP;
+    int finalTerritoryRP = earnedRP + totalStolenRP;
 
-      // Create new territory document after knowing final RP
-      transaction.set(newDocRef, {
-        'owner_id': userId,
-        'rp': finalTerritoryRP,
-        'coordinates': pathCoordinates.map((c) => GeoPoint(c[0], c[1])).toList(),
-      });
-
-      return {
-        'enemyDeductions': enemyDeductions,
-        'selfOverlapRP': selfOverlapRP,
-      };
+    // Create pending claim to be processed by Cloud Function
+    batch.set(_firestore.collection('PendingTerritoryClaims').doc(), {
+      'userId': userId,
+      'enemyDeductions': enemyDeductions,
+      'selfOverlapRP': selfOverlapRP,
+      'newDocRefId': newDocRef.id,
+      'rp': finalTerritoryRP,
+      'area_sqm': areaM2,
+      'coordinates': pathCoordinates.map((c) => GeoPoint(c[0], c[1])).toList(),
+      'timestamp': FieldValue.serverTimestamp(),
     });
 
     try {
-      final functions = FirebaseFunctions.instance;
-      await functions.httpsCallable('applyTerritoryRPUpdates').call(rpUpdates);
-      log('Successfully submitted Polygon territory and updated RP via Cloud Function.');
+      // Fire and forget batch for offline support
+      batch.commit();
+      log('Successfully queued Polygon territory via Pending Claim for offline support.');
     } catch (e) {
-      log('Error applying territory RP updates via Cloud Function: $e');
+      log('Error submitting territory batch: $e');
     }
   }
 

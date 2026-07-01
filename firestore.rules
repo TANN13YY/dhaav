@@ -80,5 +80,17 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow write: if false; // Only updated by cloud functions
     }
+    
+    match /PendingRuns/{docId} {
+      // Users can only write their own pending runs to be processed by Cloud Functions
+      allow create: if isOwner(request.resource.data.owner_id);
+      allow read, update, delete: if false;
+    }
+    
+    match /PendingTerritoryClaims/{docId} {
+      // Users can only write their own pending claims to be processed by Cloud Functions
+      allow create: if isOwner(request.resource.data.userId);
+      allow read, update, delete: if false;
+    }
   }
 }

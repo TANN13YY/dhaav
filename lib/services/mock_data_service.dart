@@ -96,7 +96,7 @@ class MockDataService {
           });
 
           // Credit RP
-          await TerritoryService().creditRunRP(owner, rp);
+          // await TerritoryService().creditRunRP(owner, rp);
         }
       }
 

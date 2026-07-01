@@ -17,10 +17,10 @@ class RunHistoryService {
 
   /// Deletes a run result and deducts its RP from the user.
   Future<void> deleteRunResult(String userId, RunResult result) async {
-    // Deduct the RP from the user's balance
-    if (result.totalRP > 0) {
-      await TerritoryService().creditRunRP(userId, -result.totalRP);
-    }
+    // Note: Deducting RP is now handled server-side or ignored for now since client writes are blocked
+    // if (result.totalRP > 0) {
+    //   await TerritoryService().creditRunRP(userId, -result.totalRP);
+    // }
     
     // Delete the run document
     await _firestore.collection('RunHistory').doc(result.id).delete();

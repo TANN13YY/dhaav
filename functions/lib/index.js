@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.applyTerritoryRPUpdates = exports.submitRun = exports.setDeveloperRole = exports.claimWelcomeBonus = exports.onUserDeleted = exports.onUserCreated = void 0;
+exports.onRunDeleted = exports.onPendingTerritoryClaim = exports.onPendingRunCreated = exports.setDeveloperRole = exports.claimWelcomeBonus = exports.onUserDeleted = exports.onUserCreated = void 0;
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 admin.initializeApp();
@@ -112,16 +112,15 @@ function getWeekId() {
     const weekNumber = Math.floor((dayOfYear - now.getDay() + jan4.getDay() + 6) / 7);
     return `${now.getFullYear()}-W${weekNumber.toString().padStart(2, '0')}`;
 }
-// 5. submitRun: Validated endpoint to record run and credit RP
-exports.submitRun = functions.https.onCall(async (data, context) => {
-    if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'Must be logged in');
-    }
-    const uid = context.auth.uid;
+// 5. onPendingRunCreated: Triggered when app saves run offline/online
+exports.onPendingRunCreated = functions.firestore.document('PendingRuns/{docId}').onCreate(async (snap, context) => {
+    const data = snap.data();
+    const uid = data.owner_id;
+    if (!uid)
+        return;
     const { pathCoordinates, totalDistanceKm, areaM2, isClosedLoop, totalDurationMs, isBusted } = data;
-    if (!Array.isArray(pathCoordinates) || typeof totalDistanceKm !== 'number') {
-        throw new functions.https.HttpsError('invalid-argument', 'Invalid data format');
-    }
+    if (typeof totalDistanceKm !== 'number')
+        return;
     // Server-side RP calculation
     let calculatedRP = 0;
     if (!isBusted) {
@@ -134,7 +133,7 @@ exports.submitRun = functions.https.onCall(async (data, context) => {
         }
     }
     const userRef = db.collection('Users').doc(uid);
-    const runRef = db.collection('RunHistory').doc();
+    const runRef = db.collection('RunHistory').doc(snap.id);
     const weekId = getWeekId();
     await db.runTransaction(async (transaction) => {
         if (calculatedRP > 0) {
@@ -159,40 +158,38 @@ exports.submitRun = functions.https.onCall(async (data, context) => {
         transaction.set(runRef, {
             id: runRef.id,
             owner_id: uid,
-            timestamp: admin.firestore.FieldValue.serverTimestamp(),
-            pathCoordinates,
+            timestamp: data.timestamp || admin.firestore.FieldValue.serverTimestamp(),
+            pathCoordinates: pathCoordinates || [],
             totalDistanceKm,
-            totalDurationMs,
+            totalDurationMs: totalDurationMs || 0,
             totalRP: calculatedRP,
-            isBusted,
-            isClosedLoop,
-            areaM2,
+            isBusted: !!isBusted,
+            isClosedLoop: !!isClosedLoop,
+            areaM2: areaM2 || 0,
             averagePaceMinPerKm: totalDistanceKm > 0 ? (totalDurationMs / 60000) / totalDistanceKm : 0
         });
+        // Delete the pending run document
+        transaction.delete(snap.ref);
     });
-    return { success: true, awardedRP: calculatedRP };
 });
-// 6. applyTerritoryRPUpdates: Adjust balances for stolen territories and self overlaps
-exports.applyTerritoryRPUpdates = functions.https.onCall(async (data, context) => {
-    if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'Must be logged in');
-    }
-    const uid = context.auth.uid;
-    // enemyDeductions: [{enemyId: string, rpStolen: number}]
-    const { enemyDeductions, selfOverlapRP } = data;
-    if (!Array.isArray(enemyDeductions) || typeof selfOverlapRP !== 'number') {
-        throw new functions.https.HttpsError('invalid-argument', 'Invalid data format');
-    }
+// 6. onPendingTerritoryClaim: Adjust balances for stolen territories
+exports.onPendingTerritoryClaim = functions.firestore.document('PendingTerritoryClaims/{docId}').onCreate(async (snap, context) => {
+    const data = snap.data();
+    const uid = data.userId;
+    if (!uid)
+        return;
+    const { enemyDeductions, selfOverlapRP, newDocRefId, rp, coordinates, area_sqm } = data;
+    if (!Array.isArray(enemyDeductions) || typeof selfOverlapRP !== 'number')
+        return;
     let totalStolen = 0;
     for (const ed of enemyDeductions) {
         if (typeof ed.rpStolen !== 'number' || ed.rpStolen <= 0 || !ed.enemyId) {
-            throw new functions.https.HttpsError('invalid-argument', 'Invalid RP stolen value');
+            return; // Invalid deduction
         }
         totalStolen += ed.rpStolen;
     }
-    if (totalStolen > 5000 || selfOverlapRP > 5000) {
-        throw new functions.https.HttpsError('out-of-range', 'Stolen RP exceeds limits');
-    }
+    if (totalStolen > 5000 || selfOverlapRP > 5000)
+        return; // Hack attempt
     const attackerRef = db.collection('Users').doc(uid);
     const weekId = getWeekId();
     await db.runTransaction(async (transaction) => {
@@ -260,7 +257,49 @@ exports.applyTerritoryRPUpdates = functions.https.onCall(async (data, context) =
                 transaction.set(attackerRef, aUpdates, { merge: true });
             }
         }
+        // 3. Create the actual territory document now that RP is validated
+        if (newDocRefId) {
+            const territoryRef = db.collection('PolygonTerritories').doc(newDocRefId);
+            transaction.set(territoryRef, {
+                owner_id: uid,
+                rp: rp,
+                area_sqm: area_sqm || 0,
+                coordinates: coordinates,
+                timestamp: admin.firestore.FieldValue.serverTimestamp()
+            });
+        }
+        // 4. Delete the pending claim
+        transaction.delete(snap.ref);
     });
-    return { success: true };
+});
+// 7. onRunDeleted: Refund/Deduct RP when user deletes a run
+exports.onRunDeleted = functions.firestore.document('RunHistory/{runId}').onDelete(async (snap, context) => {
+    const data = snap.data();
+    const uid = data.owner_id;
+    const totalRP = data.totalRP || 0;
+    if (!uid || totalRP <= 0)
+        return;
+    const userRef = db.collection('Users').doc(uid);
+    const weekId = getWeekId();
+    await db.runTransaction(async (transaction) => {
+        const userDoc = await transaction.get(userRef);
+        if (!userDoc.exists)
+            return;
+        const userData = userDoc.data() || {};
+        const storedWeekId = userData.currentWeekId || '';
+        const updates = {
+            rpBalance: admin.firestore.FieldValue.increment(-totalRP),
+            rpLost: admin.firestore.FieldValue.increment(totalRP)
+        };
+        if (storedWeekId === weekId) {
+            updates.weeklyRpLost = admin.firestore.FieldValue.increment(totalRP);
+        }
+        else {
+            updates.currentWeekId = weekId;
+            updates.weeklyRpGained = 0;
+            updates.weeklyRpLost = totalRP;
+        }
+        transaction.set(userRef, updates, { merge: true });
+    });
 });
 //# sourceMappingURL=index.js.map
