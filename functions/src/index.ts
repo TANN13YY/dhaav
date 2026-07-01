@@ -124,6 +124,31 @@ export const setDeveloperRole = functions.https.onCall(async (data, context) => 
   return { success: true };
 });
 
+// 5. adminCreditRP: Developer mock data endpoint
+export const adminCreditRP = functions.https.onCall(async (data, context) => {
+  if (!context.auth || !context.auth.token.developer) {
+    throw new functions.https.HttpsError('permission-denied', 'Must be a developer');
+  }
+
+  const { targetUid, amount } = data;
+  if (!targetUid || typeof amount !== 'number' || amount <= 0) {
+    throw new functions.https.HttpsError('invalid-argument', 'Invalid data format');
+  }
+
+  const userRef = db.collection('Users').doc(targetUid);
+  await db.runTransaction(async (transaction) => {
+    const userDoc = await transaction.get(userRef);
+    if (!userDoc.exists) return;
+
+    transaction.update(userRef, {
+      rpBalance: admin.firestore.FieldValue.increment(amount),
+      totalRpEarned: admin.firestore.FieldValue.increment(amount)
+    });
+  });
+
+  return { success: true };
+});
+
 // Helper to get week ID like "2026-W26"
 function getWeekId(): string {
   const now = new Date();

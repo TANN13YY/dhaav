@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:geolocator/geolocator.dart';
 import 'territory_service.dart';
 
@@ -95,8 +96,15 @@ class MockDataService {
             'coordinates': coords.map((c) => GeoPoint(c[0], c[1])).toList(),
           });
 
-          // Credit RP
-          // await TerritoryService().creditRunRP(owner, rp);
+          // Credit RP using Admin Cloud Function
+          try {
+            await FirebaseFunctions.instance.httpsCallable('adminCreditRP').call({
+              'targetUid': owner,
+              'amount': rp,
+            });
+          } catch (e) {
+            log('Error crediting mock RP via cloud function: $e');
+          }
         }
       }
 

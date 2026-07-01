@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onRunDeleted = exports.onPendingTerritoryClaim = exports.onPendingRunCreated = exports.setDeveloperRole = exports.claimWelcomeBonus = exports.onUserDeleted = exports.onUserCreated = void 0;
+exports.onRunDeleted = exports.onPendingTerritoryClaim = exports.onPendingRunCreated = exports.adminCreditRP = exports.setDeveloperRole = exports.claimWelcomeBonus = exports.onUserDeleted = exports.onUserCreated = void 0;
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 admin.initializeApp();
@@ -102,6 +102,27 @@ exports.setDeveloperRole = functions.https.onCall(async (data, context) => {
         throw new functions.https.HttpsError('unauthenticated', 'Must be logged in');
     }
     await admin.auth().setCustomUserClaims(context.auth.uid, { developer: true });
+    return { success: true };
+});
+// 5. adminCreditRP: Developer mock data endpoint
+exports.adminCreditRP = functions.https.onCall(async (data, context) => {
+    if (!context.auth || !context.auth.token.developer) {
+        throw new functions.https.HttpsError('permission-denied', 'Must be a developer');
+    }
+    const { targetUid, amount } = data;
+    if (!targetUid || typeof amount !== 'number' || amount <= 0) {
+        throw new functions.https.HttpsError('invalid-argument', 'Invalid data format');
+    }
+    const userRef = db.collection('Users').doc(targetUid);
+    await db.runTransaction(async (transaction) => {
+        const userDoc = await transaction.get(userRef);
+        if (!userDoc.exists)
+            return;
+        transaction.update(userRef, {
+            rpBalance: admin.firestore.FieldValue.increment(amount),
+            totalRpEarned: admin.firestore.FieldValue.increment(amount)
+        });
+    });
     return { success: true };
 });
 // Helper to get week ID like "2026-W26"
