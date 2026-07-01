@@ -50,6 +50,15 @@ class RunResult {
   }
 
   factory RunResult.fromMap(Map<String, dynamic> map, String docId) {
+    DateTime parsedTimestamp = DateTime.now();
+    if (map['timestamp'] != null) {
+      if (map['timestamp'] is int) {
+        parsedTimestamp = DateTime.fromMillisecondsSinceEpoch(map['timestamp']);
+      } else if (map['timestamp'] is Timestamp) {
+        parsedTimestamp = (map['timestamp'] as Timestamp).toDate();
+      }
+    }
+
     return RunResult(
       id: docId,
       totalDistanceKm: (map['totalDistanceKm'] ?? 0.0).toDouble(),
@@ -65,9 +74,7 @@ class RunResult {
               .toList() ?? <List<double>>[],
       isClosedLoop: map['isClosedLoop'] ?? false,
       areaM2: (map['areaM2'] ?? 0.0).toDouble(),
-      timestamp: map['timestamp'] != null 
-          ? DateTime.fromMillisecondsSinceEpoch(map['timestamp']) 
-          : DateTime.now(),
+      timestamp: parsedTimestamp,
     );
   }
 }
