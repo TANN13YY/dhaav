@@ -72,8 +72,6 @@ service cloud.firestore {
     match /RunHistory/{runId} {
       allow read: if isOwner(resource.data.owner_id) || isDeveloper();
       
-      // Once Cloud Functions handle runs, this should be disabled
-      allow create: if isOwner(request.resource.data.owner_id) || isDeveloper();
       allow delete: if isOwner(resource.data.owner_id) || isDeveloper();
       allow update: if isDeveloper(); // Runs should be immutable once saved
     }

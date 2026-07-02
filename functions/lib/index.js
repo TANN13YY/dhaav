@@ -49,20 +49,28 @@ exports.onUserDeleted = functions.auth.user().onDelete(async (user) => {
         return;
     const userDoc = userQuery.docs[0];
     const dhaavId = userDoc.id;
-    // Note: For large collections, use a batch job. This is a simple cleanup for MVP.
-    const batch = db.batch();
-    // Delete user profile
-    batch.delete(userDoc.ref);
+    const deleteDocs = [userDoc];
+    // Also delete AuthMap entry
+    const authMapDoc = await db.collection('AuthMap').doc(uid).get();
+    if (authMapDoc.exists)
+        deleteDocs.push(authMapDoc);
     // Delete run history
     const runs = await db.collection('RunHistory').where('owner_id', '==', dhaavId).get();
-    runs.forEach(doc => batch.delete(doc.ref));
+    deleteDocs.push(...runs.docs);
     // Delete territories
     const territories = await db.collection('PolygonTerritories').where('owner_id', '==', dhaavId).get();
-    territories.forEach(doc => batch.delete(doc.ref));
+    deleteDocs.push(...territories.docs);
     // Delete battle history
     const battles = await db.collection('BattleHistory').where('participants', 'array-contains', dhaavId).get();
-    battles.forEach(doc => batch.delete(doc.ref));
-    await batch.commit();
+    deleteDocs.push(...battles.docs);
+    // Firestore batches have a limit of 500 operations
+    const chunkSize = 500;
+    for (let i = 0; i < deleteDocs.length; i += chunkSize) {
+        const chunk = deleteDocs.slice(i, i + chunkSize);
+        const batch = db.batch();
+        chunk.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+    }
 });
 // 3. claimWelcomeBonus: Idempotent server-side claim
 exports.claimWelcomeBonus = functions.https.onCall(async (data, context) => {

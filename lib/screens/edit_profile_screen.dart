@@ -51,7 +51,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       } else {
         _setDefaultFields();
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Error loading profile data: $e');
       _setDefaultFields();
     }
     setState(() => _isLoading = false);

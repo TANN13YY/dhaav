@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/user_service.dart';
-import '../theme/theme_manager.dart';
 import '../models/battle_event.dart';
 import '../theme/app_colors.dart';
 import '../services/territory_service.dart';
@@ -70,7 +69,9 @@ class _LocalBattlesScreenState extends State<LocalBattlesScreen> {
           if (userDoc.exists) {
             fetchedNames[id] = userDoc.data()?['username'] ?? 'Unknown Runner';
           }
-        } catch (e) {}
+        } catch (e) {
+          debugPrint('Error fetching opponent username for $id: $e');
+        }
       }
       if (mounted) {
         setState(() {

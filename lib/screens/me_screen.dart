@@ -9,7 +9,7 @@ import '../widgets/profile_settings_sheet.dart';
 import 'local_battles_screen.dart';
 import 'my_territories_screen.dart';
 import 'rp_history_screen.dart';
-import 'shop_screen.dart';
+
 
 class MeScreen extends StatelessWidget {
   const MeScreen({super.key});
@@ -118,10 +118,7 @@ class MeScreen extends StatelessWidget {
               children: [
                 _buildProfileHeader(context, displayUsername, initials, data),
                 SizedBox(height: 32),
-                _buildSectionHeader(context, 'Dhaav Store', 'Gear up and customize', Icons.storefront),
-                SizedBox(height: 16),
-                _buildShopCard(context),
-                SizedBox(height: 32),
+
                 _buildSectionHeader(context, 'Local battles', 'Compete for local dominance', Icons.local_fire_department),
                 SizedBox(height: 16),
                 _buildLocalBattlesCard(context),
@@ -253,53 +250,6 @@ class MeScreen extends StatelessWidget {
           ],
         ),
       ],
-    );
-  }
-
-  Widget _buildShopCard(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Theme.of(context).dividerColor),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Spend your hard-earned RP on premium avatars, custom map trails, and exclusive gear.',
-            style: GoogleFonts.inter(
-              color: Theme.of(context).hintColor,
-              fontSize: 14,
-              height: 1.4,
-            ),
-          ),
-          SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.onSurface,
-                  foregroundColor: Theme.of(context).colorScheme.surface,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ShopScreen()));
-                },
-                child: Text(
-                  'ENTER SHOP',
-                  style: GoogleFonts.orbitron(
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
     );
   }
 
