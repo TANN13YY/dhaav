@@ -346,7 +346,7 @@ class _LoginSheetBodyState extends State<_LoginSheetBody> {
           backgroundColor: Theme.of(context).cardColor.withValues(alpha: 0.5),
         ),
         icon: Image.network(
-          'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/48px-Google_%22G%22_logo.svg.png',
+          'https://developers.google.com/identity/images/g-logo.png',
           height: 24,
           width: 24,
         ),
