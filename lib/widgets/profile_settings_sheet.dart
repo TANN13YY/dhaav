@@ -80,7 +80,6 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
                   .toUpperCase()
               : 'U';
 
-          String role = data['role'] ?? 'user';
           bool isAdmin = data['accountType'] == 'admin';
 
           String firstName = data['firstName'] ?? '';

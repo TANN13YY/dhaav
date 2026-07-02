@@ -67,6 +67,10 @@ export const onUserDeleted = functions.auth.user().onDelete(async (user) => {
   const territories = await db.collection('PolygonTerritories').where('owner_id', '==', dhaavId).get();
   territories.forEach(doc => batch.delete(doc.ref));
   
+  // Delete battle history
+  const battles = await db.collection('BattleHistory').where('participants', 'array-contains', dhaavId).get();
+  battles.forEach(doc => batch.delete(doc.ref));
+  
   await batch.commit();
 });
 
@@ -513,6 +517,7 @@ export const submitRun = functions.https.onCall(async (data, context) => {
       const updates: any = {
         rpBalance: admin.firestore.FieldValue.increment(calculatedRP),
         rpGained: admin.firestore.FieldValue.increment(calculatedRP),
+        totalRpEarned: admin.firestore.FieldValue.increment(calculatedRP),
       };
       
       if (storedWeekId === weekId) {

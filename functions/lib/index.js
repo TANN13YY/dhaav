@@ -57,6 +57,9 @@ exports.onUserDeleted = functions.auth.user().onDelete(async (user) => {
     // Delete territories
     const territories = await db.collection('PolygonTerritories').where('owner_id', '==', dhaavId).get();
     territories.forEach(doc => batch.delete(doc.ref));
+    // Delete battle history
+    const battles = await db.collection('BattleHistory').where('participants', 'array-contains', dhaavId).get();
+    battles.forEach(doc => batch.delete(doc.ref));
     await batch.commit();
 });
 // 3. claimWelcomeBonus: Idempotent server-side claim
@@ -456,6 +459,7 @@ exports.submitRun = functions.https.onCall(async (data, context) => {
             const updates = {
                 rpBalance: admin.firestore.FieldValue.increment(calculatedRP),
                 rpGained: admin.firestore.FieldValue.increment(calculatedRP),
+                totalRpEarned: admin.firestore.FieldValue.increment(calculatedRP),
             };
             if (storedWeekId === weekId) {
                 updates.weeklyRpGained = admin.firestore.FieldValue.increment(calculatedRP);

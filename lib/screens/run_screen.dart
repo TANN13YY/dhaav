@@ -72,7 +72,9 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid != null && RunScreen.runHistory.isEmpty) {
       try {
-        final runs = await RunHistoryService().getUserRuns(uid);
+        final dhaavId = await UserService().fetchDhaavId(uid);
+        if (dhaavId == null) return;
+        final runs = await RunHistoryService().getUserRuns(dhaavId);
         if (mounted) {
           RunScreen.runHistory.clear();
           RunScreen.runHistory.addAll(runs.where((r) => r.totalDistanceKm > 0));
@@ -604,7 +606,10 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
         final uid = FirebaseAuth.instance.currentUser?.uid;
         if (uid != null) {
           try {
-            await RunHistoryService().deleteRunResult(uid, run);
+            final dhaavId = await UserService().fetchDhaavId(uid);
+            if (dhaavId != null) {
+              await RunHistoryService().deleteRunResult(dhaavId, run);
+            }
           } catch (e) {
             debugPrint('Error deleting run: $e');
           }
