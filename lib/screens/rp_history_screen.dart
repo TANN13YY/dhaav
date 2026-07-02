@@ -5,6 +5,7 @@ import '../services/run_history_service.dart';
 import '../services/run_tracker.dart';
 import '../services/user_service.dart';
 import '../theme/app_colors.dart';
+import '../services/settings_manager.dart';
 
 class RPHistoryScreen extends StatefulWidget {
   const RPHistoryScreen({super.key});
@@ -121,15 +122,20 @@ class _RPHistoryScreenState extends State<RPHistoryScreen> {
                                 ),
                               ),
                               SizedBox(height: 4),
-                              Text(
-                                run.totalDistanceKm == 0 
-                                  ? 'Welcome Bonus' 
-                                  : '${run.totalDistanceKm.toStringAsFixed(2)} km Run',
-                                style: GoogleFonts.inter(
-                                  color: Theme.of(context).colorScheme.onSurface,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
+                              ValueListenableBuilder<String>(
+                                valueListenable: SettingsManager.instance.unitNotifier,
+                                builder: (context, _, __) {
+                                  return Text(
+                                    run.totalDistanceKm == 0 
+                                      ? 'Welcome Bonus' 
+                                      : '${SettingsManager.instance.formatDistance(run.totalDistanceKm)} Run',
+                                    style: GoogleFonts.inter(
+                                      color: Theme.of(context).colorScheme.onSurface,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  );
+                                }
                               ),
                             ],
                           ),

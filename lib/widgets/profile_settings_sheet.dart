@@ -9,6 +9,7 @@ import '../screens/edit_profile_screen.dart';
 import '../screens/run_screen.dart';
 import '../screens/map_radar_screen.dart';
 import '../services/mock_data_service.dart';
+import '../services/settings_manager.dart';
 import '../debug_helper.dart';
 import '../services/user_service.dart';
 
@@ -768,45 +769,16 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
 
 // ─── Notification Settings Widget ─────────────────────────────────────────
 
-class _NotificationSettingsBody extends StatefulWidget {
-  @override
-  State<_NotificationSettingsBody> createState() =>
-      _NotificationSettingsBodyState();
-}
-
-class _NotificationSettingsBodyState extends State<_NotificationSettingsBody> {
-  bool _territoryAlerts = true;
-  bool _runReminders = true;
-  bool _leaderboardUpdates = false;
-  bool _socialNotifications = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadSettings();
-  }
-
-  Future<void> _loadSettings() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return;
-    final doc =
-        await FirebaseFirestore.instance.collection('Users').doc(uid).get();
-    if (doc.exists && doc.data() != null) {
-      final settings = doc.data()?['settings'] ?? {};
-      if (mounted) {
-        setState(() {
-          _territoryAlerts = settings['territoryAlerts'] ?? true;
-          _runReminders = settings['runReminders'] ?? true;
-          _leaderboardUpdates = settings['leaderboardUpdates'] ?? false;
-          _socialNotifications = settings['socialNotifications'] ?? true;
-        });
-      }
-    }
-  }
-
+class _NotificationSettingsBody extends StatelessWidget {
   Future<void> _saveSetting(String key, bool value) async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
+    
+    // Update local immediately for snappy UI
+    final currentNotifs = Map<String, dynamic>.from(SettingsManager.instance.notificationNotifier.value);
+    currentNotifs[key] = value;
+    SettingsManager.instance.notificationNotifier.value = currentNotifs;
+    
     await FirebaseFirestore.instance.collection('Users').doc(uid).set({
       'settings': {key: value}
     }, SetOptions(merge: true));
@@ -814,39 +786,44 @@ class _NotificationSettingsBodyState extends State<_NotificationSettingsBody> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _buildSwitch(
-            'Territory alerts',
-            'Get notified when someone captures your territory',
-            _territoryAlerts, (v) {
-          setState(() => _territoryAlerts = v);
-          _saveSetting('territoryAlerts', v);
-        }),
-        _buildSwitch(
-            'Run reminders', 'Daily motivation to keep running', _runReminders,
-            (v) {
-          setState(() => _runReminders = v);
-          _saveSetting('runReminders', v);
-        }),
-        _buildSwitch('Leaderboard updates', 'Weekly ranking changes',
-            _leaderboardUpdates, (v) {
-          setState(() => _leaderboardUpdates = v);
-          _saveSetting('leaderboardUpdates', v);
-        }),
-        _buildSwitch(
-            'Social', 'Friend requests and squad invites', _socialNotifications,
-            (v) {
-          setState(() => _socialNotifications = v);
-          _saveSetting('socialNotifications', v);
-        }),
-      ],
+    return ValueListenableBuilder<Map<String, dynamic>>(
+      valueListenable: SettingsManager.instance.notificationNotifier,
+      builder: (context, settings, child) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildSwitch(
+                context,
+                'Territory alerts',
+                'Get notified when someone captures your territory',
+                settings['territoryAlerts'] ?? true, (v) {
+              _saveSetting('territoryAlerts', v);
+            }),
+            _buildSwitch(
+                context,
+                'Run reminders', 'Daily motivation to keep running', 
+                settings['runReminders'] ?? true,
+                (v) {
+              _saveSetting('runReminders', v);
+            }),
+            _buildSwitch(context, 'Leaderboard updates', 'Weekly ranking changes',
+                settings['leaderboardUpdates'] ?? false, (v) {
+              _saveSetting('leaderboardUpdates', v);
+            }),
+            _buildSwitch(context,
+                'Social', 'Friend requests and squad invites', 
+                settings['socialNotifications'] ?? true,
+                (v) {
+              _saveSetting('socialNotifications', v);
+            }),
+          ],
+        );
+      },
     );
   }
 
   Widget _buildSwitch(
-      String title, String subtitle, bool value, Function(bool) onChanged) {
+      BuildContext context, String title, String subtitle, bool value, Function(bool) onChanged) {
     return SwitchListTile(
       contentPadding: EdgeInsets.zero,
       activeThumbColor: Theme.of(context).colorScheme.primary,
@@ -865,38 +842,14 @@ class _NotificationSettingsBodyState extends State<_NotificationSettingsBody> {
 
 // ─── Unit Settings Widget ─────────────────────────────────────────────────
 
-class _UnitSettingsBody extends StatefulWidget {
-  @override
-  State<_UnitSettingsBody> createState() => _UnitSettingsBodyState();
-}
-
-class _UnitSettingsBodyState extends State<_UnitSettingsBody> {
-  String _selectedUnit = 'metric';
-
-  @override
-  void initState() {
-    super.initState();
-    _loadSettings();
-  }
-
-  Future<void> _loadSettings() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return;
-    final doc =
-        await FirebaseFirestore.instance.collection('Users').doc(uid).get();
-    if (doc.exists && doc.data() != null) {
-      final settings = doc.data()?['settings'] ?? {};
-      if (mounted) {
-        setState(() {
-          _selectedUnit = settings['units'] ?? 'metric';
-        });
-      }
-    }
-  }
-
+class _UnitSettingsBody extends StatelessWidget {
   Future<void> _saveSetting(String value) async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
+    
+    // Update local immediately for snappy UI
+    SettingsManager.instance.unitNotifier.value = value;
+    
     await FirebaseFirestore.instance.collection('Users').doc(uid).set({
       'settings': {'units': value}
     }, SetOptions(merge: true));
@@ -904,40 +857,43 @@ class _UnitSettingsBodyState extends State<_UnitSettingsBody> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        RadioListTile<String>(
-          contentPadding: EdgeInsets.zero,
-          activeColor: Theme.of(context).colorScheme.primary,
-          title: Text('Kilometres & metres',
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-          subtitle: Text('Metric system',
-              style:
-                  TextStyle(color: Theme.of(context).hintColor, fontSize: 12)),
-          value: 'metric',
-          groupValue: _selectedUnit,
-          onChanged: (v) {
-            setState(() => _selectedUnit = v!);
-            _saveSetting(v!);
-          },
-        ),
-        RadioListTile<String>(
-          contentPadding: EdgeInsets.zero,
-          activeColor: Theme.of(context).colorScheme.primary,
-          title: Text('Miles & feet',
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-          subtitle: Text('Imperial system',
-              style:
-                  TextStyle(color: Theme.of(context).hintColor, fontSize: 12)),
-          value: 'imperial',
-          groupValue: _selectedUnit,
-          onChanged: (v) {
-            setState(() => _selectedUnit = v!);
-            _saveSetting(v!);
-          },
-        ),
-      ],
+    return ValueListenableBuilder<String>(
+      valueListenable: SettingsManager.instance.unitNotifier,
+      builder: (context, selectedUnit, child) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            RadioListTile<String>(
+              contentPadding: EdgeInsets.zero,
+              activeColor: Theme.of(context).colorScheme.primary,
+              title: Text('Kilometres & metres',
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+              subtitle: Text('Metric system',
+                  style:
+                      TextStyle(color: Theme.of(context).hintColor, fontSize: 12)),
+              value: 'metric',
+              groupValue: selectedUnit,
+              onChanged: (v) {
+                _saveSetting(v!);
+              },
+            ),
+            RadioListTile<String>(
+              contentPadding: EdgeInsets.zero,
+              activeColor: Theme.of(context).colorScheme.primary,
+              title: Text('Miles & feet',
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+              subtitle: Text('Imperial system',
+                  style:
+                      TextStyle(color: Theme.of(context).hintColor, fontSize: 12)),
+              value: 'imperial',
+              groupValue: selectedUnit,
+              onChanged: (v) {
+                _saveSetting(v!);
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 }

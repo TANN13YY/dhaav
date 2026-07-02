@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/territory_service.dart';
 import '../theme/app_colors.dart';
+import '../services/settings_manager.dart';
 import '../services/user_service.dart';
 import 'territory_map_screen.dart';
 
@@ -142,13 +143,18 @@ class _MyTerritoriesScreenState extends State<MyTerritoriesScreen> {
                                     const SizedBox(width: 12),
                                     Icon(Icons.crop_square, color: Theme.of(context).colorScheme.primary, size: 14),
                                     const SizedBox(width: 4),
-                                    Text(
-                                      '${territory.areaSqm.toStringAsFixed(1)} m²',
-                                      style: GoogleFonts.orbitron(
-                                        color: Theme.of(context).colorScheme.primary,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 12,
-                                      ),
+                                    ValueListenableBuilder<String>(
+                                      valueListenable: SettingsManager.instance.unitNotifier,
+                                      builder: (context, _, __) {
+                                        return Text(
+                                          SettingsManager.instance.formatArea(territory.areaSqm),
+                                          style: GoogleFonts.orbitron(
+                                            color: Theme.of(context).colorScheme.primary,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 12,
+                                          ),
+                                        );
+                                      }
                                     ),
                                   ],
                                 ),

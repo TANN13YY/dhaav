@@ -6,9 +6,11 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'screens/main_layout.dart';
 import 'theme/app_colors.dart';
 import 'theme/theme_manager.dart';
+import 'services/settings_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  SettingsManager.instance.initialize();
 
   // Set the Mapbox access token from build args (--dart-define=ACCESS_TOKEN=pk.xxx)
   const mapboxToken = String.fromEnvironment('ACCESS_TOKEN');

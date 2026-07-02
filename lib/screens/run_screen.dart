@@ -12,7 +12,8 @@ import '../services/location_service.dart';
 import '../services/territory_service.dart';
 import '../services/run_tracker.dart';
 import '../services/run_history_service.dart';
-import '../services/mock_data_service.dart';
+import '../widgets/home_map_overlay.dart';
+import '../services/settings_manager.dart';
 import '../services/user_service.dart';
 import '../theme/theme_manager.dart';
 import 'map_radar_screen.dart' show mapRefreshNotifier;
@@ -468,13 +469,6 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
     return '$mm:$ss';
   }
 
-  String _formatPace(double pace) {
-    if (pace <= 0) return '0:00';
-    final mins = pace.floor();
-    final secs = ((pace - mins) * 60).round();
-    return '$mins:${secs.toString().padLeft(2, '0')}';
-  }
-
   // â”€â”€â”€ History â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   void _showHistory() {
@@ -654,25 +648,30 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
                   ),
                 ),
                 SizedBox(height: 4),
-                Row(
-                  children: [
-                    Text(
-                      '${run.totalDistanceKm.toStringAsFixed(2)} km',
-                      style: GoogleFonts.inter(
-                        color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 15,
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Text(
-                      durationStr,
-                      style: GoogleFonts.inter(color: Theme.of(context).hintColor, fontSize: 13),
-                    ),
-                    SizedBox(width: 12),
-                    Text(
-                      '${_formatPace(run.averagePaceMinPerKm)} /km',
-                      style: GoogleFonts.inter(color: Theme.of(context).hintColor, fontSize: 13),
-                    ),
-                  ],
+                ValueListenableBuilder<String>(
+                  valueListenable: SettingsManager.instance.unitNotifier,
+                  builder: (context, _, __) {
+                    return Row(
+                      children: [
+                        Text(
+                          SettingsManager.instance.formatDistance(run.totalDistanceKm),
+                          style: GoogleFonts.inter(
+                            color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 15,
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Text(
+                          durationStr,
+                          style: GoogleFonts.inter(color: Theme.of(context).hintColor, fontSize: 13),
+                        ),
+                        SizedBox(width: 12),
+                        Text(
+                          SettingsManager.instance.formatPace(run.averagePaceMinPerKm),
+                          style: GoogleFonts.inter(color: Theme.of(context).hintColor, fontSize: 13),
+                        ),
+                      ],
+                    );
+                  }
                 ),
               ],
             ),
@@ -923,13 +922,26 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
           SizedBox(height: 20),
 
           // Stats row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildStat(distance.toStringAsFixed(2), 'km', 'Distance'),
-              _buildStat(_formatDuration(duration), '', 'Duration'),
-              _buildStat(_formatPace(pace), '', 'Average pace'),
-            ],
+          ValueListenableBuilder<String>(
+            valueListenable: SettingsManager.instance.unitNotifier,
+            builder: (context, _, __) {
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildStat(
+                    SettingsManager.instance.convertDistance(distance).toStringAsFixed(2), 
+                    SettingsManager.instance.unitSuffix, 
+                    'Distance'
+                  ),
+                  _buildStat(_formatDuration(duration), '', 'Duration'),
+                  _buildStat(
+                    SettingsManager.instance.formatPace(pace).split(' ')[0], 
+                    SettingsManager.instance.formatPace(pace).split(' ')[1], 
+                    'Average pace'
+                  ),
+                ],
+              );
+            }
           ),
           SizedBox(height: 20),
 
