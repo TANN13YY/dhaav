@@ -687,14 +687,14 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
                     batch.delete(doc.reference);
                   }
 
-                  // 4. Deduct RP from user balance (and clean up old fields)
+                  // 4. Reset user RP strictly (keeps Welcome Bonus 100 RP cleanly, avoids negative math from territory losses)
                   batch.update(db.collection('Users').doc(dhaavId), {
-                    if (rpToRemove > 0) ...{
-                      'rpBalance': FieldValue.increment(-rpToRemove),
-                      'rpGained': FieldValue.increment(-rpToRemove),
-                      'weeklyRpGained': FieldValue.increment(-rpToRemove),
-                      'totalRpEarned': FieldValue.increment(-rpToRemove),
-                    },
+                    'rpBalance': 100,
+                    'rpGained': 100,
+                    'weeklyRpGained': 0,
+                    'totalRpEarned': 100,
+                    'rpLost': 0,
+                    'weeklyRpLost': 0,
                     'stats': FieldValue.delete(),
                     'runHistory': FieldValue.delete(),
                     'territories': FieldValue.delete(),
@@ -703,9 +703,10 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
                   await batch.commit();
                 }
 
-                // Clear local run history
+                // Clear local run history & refresh map
                 RunScreen.runHistory.clear();
                 RunScreen.historyNotifier.value++;
+                mapRefreshNotifier.value++; // Force Map to instantly drop deleted territories
 
                 if (ctx.mounted) {
                   ScaffoldMessenger.of(ctx).showSnackBar(
