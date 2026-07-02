@@ -201,14 +201,17 @@ class MockDataService {
       }
       
       final docs = query.docs;
-      final doc = docs[math.Random().nextInt(docs.length)];
-      final coords = (doc.data())['coordinates'] as List<dynamic>;
-      if (coords.isEmpty) return;
+      List<PolygonTerritory> allTerritories = [];
+      for (var d in docs) {
+        allTerritories.add(PolygonTerritory.fromFirestore(d));
+      }
       
-      // Center the attack on a random CORNER of the territory rather than the dead center.
-      // This ensures the attack intersects the border and doesn't create a "donut hole" 
-      // inside the polygon (which our simple flat-array Firestore schema currently can't render).
-      final centerPoint = coords[math.Random().nextInt(coords.length)] as GeoPoint;
+      final mergedPaths = TerritoryService().mergeTerritories(allTerritories);
+      if (mergedPaths.isEmpty || mergedPaths.first.isEmpty) return;
+      
+      final randomMergedPath = mergedPaths[math.Random().nextInt(mergedPaths.length)];
+      final centerList = randomMergedPath[math.Random().nextInt(randomMergedPath.length)];
+      final centerPoint = GeoPoint(centerList[0], centerList[1]);
       
       // Generate the requested shape around this point
       final double lat = centerPoint.latitude;

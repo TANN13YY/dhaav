@@ -205,16 +205,26 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
 
       List<PolygonAnnotationOptions> polygons = [];
 
-      for (var t in territories) {
-        final isMine = t.ownerId == currentDhaavId;
-        final coords = t.coordinates.map((p) => Position(p[1], p[0])).toList();
-        
-        polygons.add(PolygonAnnotationOptions(
-          geometry: Polygon(coordinates: [coords]),
-          fillColor: (isMine ? AppColors.territoryOwn : AppColors.territoryOther).value,
-          fillOpacity: 0.3,
-          fillOutlineColor: (isMine ? AppColors.territoryOwn : AppColors.territoryOther).value,
-        ));
+      final visualMap = TerritoryService().getVisualTerritories(territories);
+
+      for (var entry in visualMap.entries) {
+        final ownerId = entry.key;
+        final isMine = ownerId == currentDhaavId;
+
+        for (var poly in entry.value) {
+          final List<List<Position>> coordinates = [];
+          for (var ring in poly) {
+            coordinates.add(ring.map((p) => Position(p[1], p[0])).toList());
+          }
+          if (coordinates.isEmpty || coordinates.first.isEmpty) continue;
+          
+          polygons.add(PolygonAnnotationOptions(
+            geometry: Polygon(coordinates: coordinates),
+            fillColor: (isMine ? AppColors.territoryOwn : AppColors.territoryOther).value,
+            fillOpacity: 0.3,
+            fillOutlineColor: (isMine ? AppColors.territoryOwn : AppColors.territoryOther).value,
+          ));
+        }
       }
       
       await _polygonManager?.createMulti(polygons);
@@ -881,7 +891,15 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
         mainAxisSize: MainAxisSize.min,
         children: [
           // Capture area
-              Column(
+          ValueListenableBuilder<String>(
+            valueListenable: SettingsManager.instance.unitNotifier,
+            builder: (context, _, __) {
+              final formattedArea = SettingsManager.instance.formatArea(capturedM2.toDouble());
+              final parts = formattedArea.split(' ');
+              final valueStr = parts[0];
+              final unitStr = parts.sublist(1).join(' ');
+              
+              return Column(
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -889,12 +907,12 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
                     textBaseline: TextBaseline.alphabetic,
                     children: [
                       Text(
-                        '$capturedM2',
+                        valueStr,
                         style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontSize: 32, fontWeight: FontWeight.w900),
                       ),
                       SizedBox(width: 4),
                       Text(
-                        'sq meters',
+                        unitStr,
                         style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.w900),
                       ),
                     ],
@@ -905,7 +923,9 @@ class _RunScreenState extends State<RunScreen> with WidgetsBindingObserver {
                     style: GoogleFonts.inter(color: Theme.of(context).hintColor, fontSize: 12),
                   ),
                 ],
-              ),
+              );
+            }
+          ),
           SizedBox(height: 12),
           Text(
             _runState == RunState.idle 

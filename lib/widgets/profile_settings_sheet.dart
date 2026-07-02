@@ -226,12 +226,17 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
                                   color: Theme.of(context).dividerColor,
                                   height: 1,
                                   indent: 16),
-                              _buildSubSection(
-                                title: 'Units & Measurement',
-                                subtitle: 'Kilometres & metres',
-                                onTap: () {
-                                  _showUnitSettings(context);
-                                },
+                              ValueListenableBuilder<String>(
+                                valueListenable: SettingsManager.instance.unitNotifier,
+                                builder: (context, _, __) {
+                                  return _buildSubSection(
+                                    title: 'Units & Measurement',
+                                    subtitle: SettingsManager.instance.isMetric ? 'Kilometres & metres' : 'Miles & feet',
+                                    onTap: () {
+                                      _showUnitSettings(context);
+                                    },
+                                  );
+                                }
                               ),
                               Divider(
                                   color: Theme.of(context).dividerColor,
@@ -383,7 +388,7 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
                             ),
                             _buildNavigationTile(
                               icon: Icons.bug_report,
-                              label: 'Developer: Show Map Debug',
+                              label: 'Developer: Database Cleanup',
                               onTap: () async {
                                 await DebugHelper.analyzeTerritories(context);
                               },
@@ -649,8 +654,7 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
                   
                   final batch = db.batch();
 
-                  // 1. Find all physical runs to delete and calculate RP to deduct
-                  int rpToRemove = 0;
+                  // 1. Find all physical runs to delete
                   final runsSnapshot = await db
                       .collection('RunHistory')
                       .where('owner_id', isEqualTo: dhaavId)
@@ -663,7 +667,6 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
                     if (distance > 0) {
                       // Keep the 0.0km Welcome Bonus!
                       batch.delete(doc.reference);
-                      rpToRemove += (data['totalRP'] as num?)?.toInt() ?? 0;
                     }
                   }
 
@@ -673,8 +676,6 @@ class _ProfileSettingsContentState extends State<_ProfileSettingsContent> {
                       .where('owner_id', isEqualTo: dhaavId)
                       .get();
                   for (var doc in territorySnapshot.docs) {
-                    final data = doc.data();
-                    rpToRemove += (data['rp'] as num?)?.toInt() ?? 0;
                     batch.delete(doc.reference);
                   }
 
@@ -780,7 +781,10 @@ class _NotificationSettingsBody extends StatelessWidget {
     currentNotifs[key] = value;
     SettingsManager.instance.notificationNotifier.value = currentNotifs;
     
-    await FirebaseFirestore.instance.collection('Users').doc(uid).set({
+    final dhaavId = await UserService().fetchDhaavId(uid);
+    if (dhaavId == null) return;
+    
+    await FirebaseFirestore.instance.collection('Users').doc(dhaavId).set({
       'settings': {key: value}
     }, SetOptions(merge: true));
   }
@@ -851,7 +855,10 @@ class _UnitSettingsBody extends StatelessWidget {
     // Update local immediately for snappy UI
     SettingsManager.instance.unitNotifier.value = value;
     
-    await FirebaseFirestore.instance.collection('Users').doc(uid).set({
+    final dhaavId = await UserService().fetchDhaavId(uid);
+    if (dhaavId == null) return;
+    
+    await FirebaseFirestore.instance.collection('Users').doc(dhaavId).set({
       'settings': {'units': value}
     }, SetOptions(merge: true));
   }

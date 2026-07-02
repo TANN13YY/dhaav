@@ -121,41 +121,51 @@ class _MapRadarScreenState extends State<MapRadarScreen> {
       List<PolygonAnnotationOptions> polygons = [];
       List<PointAnnotationOptions> points = [];
 
-      for (var t in territories) {
-        final isMine = t.ownerId == currentDhaavId;
-        final coords = t.coordinates.map((p) => Position(p[1], p[0])).toList();
-        
-        polygons.add(PolygonAnnotationOptions(
-          geometry: Polygon(coordinates: [coords]),
-          fillColor: (isMine ? AppColors.territoryOwn : AppColors.territoryOther).value,
-          fillOpacity: 0.3,
-          fillOutlineColor: (isMine ? AppColors.territoryOwn : AppColors.territoryOther).value,
-        ));
+      final visualMap = TerritoryService().getVisualTerritories(territories);
 
-        // Calculate simple center for the label
-        // Only show labels for OTHER players to avoid clustering the map with "ME"
-        if (coords.isNotEmpty && !isMine) {
-          double sumLat = 0;
-          double sumLng = 0;
-          for (var c in coords) {
-            sumLat += c.lat.toDouble();
-            sumLng += c.lng.toDouble();
+      for (var entry in visualMap.entries) {
+        final ownerId = entry.key;
+        final isMine = ownerId == currentDhaavId;
+
+        for (var poly in entry.value) {
+          final List<List<Position>> coordinates = [];
+          for (var ring in poly) {
+            coordinates.add(ring.map((p) => Position(p[1], p[0])).toList());
           }
-          final centerLat = sumLat / coords.length;
-          final centerLng = sumLng / coords.length;
-
-          String initials = t.ownerId.substring(0, 2).toUpperCase();
-          if (t.ownerId == 'mock_user_alpha') initials = 'A';
-          if (t.ownerId == 'mock_user_beta') initials = 'B';
-
-          points.add(PointAnnotationOptions(
-            geometry: Point(coordinates: Position(centerLng, centerLat)),
-            textField: initials,
-            textSize: 14.0,
-            textColor: Colors.white.value,
-            textHaloColor: Colors.black.value,
-            textHaloWidth: 1.5,
+          if (coordinates.isEmpty || coordinates.first.isEmpty) continue;
+          
+          polygons.add(PolygonAnnotationOptions(
+            geometry: Polygon(coordinates: coordinates),
+            fillColor: (isMine ? AppColors.territoryOwn : AppColors.territoryOther).value,
+            fillOpacity: 0.3,
+            fillOutlineColor: (isMine ? AppColors.territoryOwn : AppColors.territoryOther).value,
           ));
+
+          // Calculate simple center for the label for this merged polygon
+          if (!isMine) {
+            final outerRing = coordinates.first;
+            double sumLat = 0;
+            double sumLng = 0;
+            for (var c in outerRing) {
+              sumLat += c.lat.toDouble();
+              sumLng += c.lng.toDouble();
+            }
+            final centerLat = sumLat / outerRing.length;
+            final centerLng = sumLng / outerRing.length;
+
+            String initials = ownerId.substring(0, 2).toUpperCase();
+            if (ownerId == 'mock_user_alpha') initials = 'A';
+            if (ownerId == 'mock_user_beta') initials = 'B';
+
+            points.add(PointAnnotationOptions(
+              geometry: Point(coordinates: Position(centerLng, centerLat)),
+              textField: initials,
+              textSize: 14.0,
+              textColor: Colors.white.value,
+              textHaloColor: Colors.black.value,
+              textHaloWidth: 1.5,
+            ));
+          }
         }
       }
       

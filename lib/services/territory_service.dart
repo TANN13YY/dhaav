@@ -125,6 +125,118 @@ class TerritoryService {
     _polygonCache.clear();
   }
 
+  /// Calculates visual representation of territories by mathematically subtracting overlaps
+  /// and properly grouping Mapbox holes using Clipper2 area signs.
+  Map<String, List<List<List<List<double>>>>> getVisualTerritories(List<PolygonTerritory> territories) {
+    if (territories.isEmpty) return {};
+
+    // Group by owner
+    Map<String, List<Path64>> ownerPaths = {};
+    for (var t in territories) {
+      ownerPaths.putIfAbsent(t.ownerId, () => []).add(t.toClipperPath());
+    }
+
+    // Union each owner's paths
+    Map<String, List<Path64>> ownerUnions = {};
+    for (var entry in ownerPaths.entries) {
+      ownerUnions[entry.key] = Clipper.union(subject: entry.value, clip: [], fillRule: FillRule.nonZero);
+    }
+
+    // For each owner, subtract all other owners
+    Map<String, List<List<List<List<double>>>>> visualPolygons = {};
+    for (var ownerId in ownerUnions.keys) {
+      List<Path64> mine = ownerUnions[ownerId]!;
+      List<Path64> others = [];
+      for (var otherId in ownerUnions.keys) {
+        if (otherId != ownerId) {
+          others.addAll(ownerUnions[otherId]!);
+        }
+      }
+      
+      final finalPaths = Clipper.difference(subject: mine, clip: others, fillRule: FillRule.nonZero);
+      
+      // Separate outers and holes
+      List<Path64> outers = [];
+      List<Path64> holes = [];
+      for (var path in finalPaths) {
+        if (path.area > 0) {
+          outers.add(path);
+        } else if (path.area < 0) {
+          holes.add(path);
+        }
+      }
+      
+      List<List<List<List<double>>>> ownerPolys = [];
+      for (var outer in outers) {
+         List<List<List<double>>> poly = [];
+         List<List<double>> outerCoords = [];
+         double minX = double.infinity, minY = double.infinity;
+         double maxX = double.negativeInfinity, maxY = double.negativeInfinity;
+         
+         for (var pt in outer) {
+            double lng = pt.x / clipperScale;
+            double lat = pt.y / clipperScale;
+            outerCoords.add([lat, lng]);
+            if (lng < minX) minX = lng;
+            if (lng > maxX) maxX = lng;
+            if (lat < minY) minY = lat;
+            if (lat > maxY) maxY = lat;
+         }
+         if (outerCoords.isNotEmpty) outerCoords.add(outerCoords.first);
+         poly.add(outerCoords);
+         
+         // Assign holes using simple bounding box test
+         for (var hole in holes) {
+           if (hole.isEmpty) continue;
+           double holeLng = hole.first.x / clipperScale;
+           double holeLat = hole.first.y / clipperScale;
+           
+           if (holeLng >= minX && holeLng <= maxX && holeLat >= minY && holeLat <= maxY) {
+              List<List<double>> holeCoords = [];
+              for (var pt in hole) {
+                holeCoords.add([pt.y / clipperScale, pt.x / clipperScale]);
+              }
+              if (holeCoords.isNotEmpty) holeCoords.add(holeCoords.first);
+              poly.add(holeCoords);
+           }
+         }
+         ownerPolys.add(poly);
+      }
+      visualPolygons[ownerId] = ownerPolys;
+    }
+    
+    return visualPolygons;
+  }
+
+  /// Merges overlapping territories into continuous polygons.
+  List<List<List<double>>> mergeTerritories(List<PolygonTerritory> territories) {
+    if (territories.isEmpty) return [];
+    
+    final subjects = <Path64>[];
+    for (var t in territories) {
+      subjects.add(t.toClipperPath());
+    }
+    
+    final resultPaths = Clipper.union(
+      subject: subjects,
+      clip: [],
+      fillRule: FillRule.nonZero
+    );
+    
+    List<List<List<double>>> merged = [];
+    for (var path in resultPaths) {
+      List<List<double>> coords = [];
+      for (var point in path) {
+        coords.add([point.y / clipperScale, point.x / clipperScale]); 
+      }
+      if (coords.isNotEmpty) {
+        coords.add([coords.first[0], coords.first[1]]);
+      }
+      merged.add(coords);
+    }
+    return merged;
+  }
+
   Future<void> submitCustomTerritory({
     required List<List<double>> pathCoordinates,
     required double areaM2,

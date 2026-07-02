@@ -10,7 +10,6 @@ import 'services/settings_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  SettingsManager.instance.initialize();
 
   // Set the Mapbox access token from build args (--dart-define=ACCESS_TOKEN=pk.xxx)
   const mapboxToken = String.fromEnvironment('ACCESS_TOKEN');
@@ -20,6 +19,9 @@ void main() async {
 
   // Initialize Firebase
   await Firebase.initializeApp();
+
+  // SettingsManager depends on FirebaseAuth, so it must be initialized after Firebase
+  SettingsManager.instance.initialize();
 
   runApp(const DhaavApp());
 }

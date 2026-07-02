@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/user_service.dart';
 
 /// ── SettingsManager ───────────────────────────────────────────────────────
 /// A global singleton that listens to the user's Firestore document
@@ -29,15 +30,17 @@ class SettingsManager {
 
   /// Initializes listeners to auth state and user settings.
   void initialize() {
-    _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
+    _authSub = FirebaseAuth.instance.authStateChanges().listen((user) async {
       _userDocSub?.cancel();
       if (user != null) {
-        _userDocSub = FirebaseFirestore.instance
-            .collection('Users')
-            .doc(user.uid)
-            .snapshots()
-            .listen((snapshot) {
-          if (snapshot.exists && snapshot.data() != null) {
+        final dhaavId = await UserService().fetchDhaavId(user.uid);
+        if (dhaavId != null) {
+          _userDocSub = FirebaseFirestore.instance
+              .collection('Users')
+              .doc(dhaavId)
+              .snapshots()
+              .listen((snapshot) {
+            if (snapshot.exists && snapshot.data() != null) {
             final data = snapshot.data()!;
             final settings = data['settings'] as Map<String, dynamic>? ?? {};
 
@@ -50,8 +53,9 @@ class SettingsManager {
             currentNotifs['socialNotifications'] = settings['socialNotifications'] ?? true;
             
             notificationNotifier.value = currentNotifs;
-          }
-        });
+            }
+          });
+        }
       } else {
         // Reset to defaults on logout
         unitNotifier.value = 'metric';
