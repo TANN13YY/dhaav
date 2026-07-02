@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
@@ -29,9 +30,23 @@ class _LoginSheetBodyState extends State<_LoginSheetBody> {
   bool _isLogin = false; // false = Sign Up mode, true = Login mode
   bool _loading = false;
   String? _error;
+  StreamSubscription? _authSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _authSub = AuthService.instance.authStateChanges.listen((user) {
+      if (user != null && mounted) {
+        if (ModalRoute.of(context)?.isCurrent == true) {
+          Navigator.of(context).pop();
+        }
+      }
+    });
+  }
 
   @override
   void dispose() {
+    _authSub?.cancel();
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
     super.dispose();
@@ -53,7 +68,6 @@ class _LoginSheetBodyState extends State<_LoginSheetBody> {
         await AuthService.instance
             .signUpWithEmail(_emailCtrl.text, _passwordCtrl.text);
       }
-      if (mounted) Navigator.of(context).pop();
     } catch (e) {
       setState(() => _error = AuthExceptionHandler.friendlyMessage(e));
     } finally {
@@ -68,7 +82,6 @@ class _LoginSheetBodyState extends State<_LoginSheetBody> {
     });
     try {
       await AuthService.instance.signInWithGoogle();
-      if (mounted) Navigator.of(context).pop();
     } catch (e) {
       setState(() => _error = AuthExceptionHandler.friendlyMessage(e));
     } finally {
