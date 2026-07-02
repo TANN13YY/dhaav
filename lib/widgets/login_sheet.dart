@@ -22,30 +22,18 @@ class _LoginSheetBody extends StatefulWidget {
   State<_LoginSheetBody> createState() => _LoginSheetBodyState();
 }
 
-class _LoginSheetBodyState extends State<_LoginSheetBody>
-    with SingleTickerProviderStateMixin {
+class _LoginSheetBodyState extends State<_LoginSheetBody> {
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isLogin = false; // false = Sign Up mode, true = Login mode
   bool _loading = false;
   String? _error;
-  late final AnimationController _shimmer;
-
-  @override
-  void initState() {
-    super.initState();
-    _shimmer = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2500),
-    )..repeat();
-  }
 
   @override
   void dispose() {
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
-    _shimmer.dispose();
     super.dispose();
   }
 
@@ -179,10 +167,6 @@ class _LoginSheetBodyState extends State<_LoginSheetBody>
             fontWeight: FontWeight.w900,
             color: Theme.of(context).colorScheme.onSurface,
             letterSpacing: 6,
-            shadows: [
-              Shadow(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.8), blurRadius: 20),
-              Shadow(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4), blurRadius: 40),
-            ],
           ),
         ),
         SizedBox(height: 6),
@@ -267,60 +251,36 @@ class _LoginSheetBodyState extends State<_LoginSheetBody>
   }
 
   Widget _buildSubmitButton() {
-    return AnimatedBuilder(
-      animation: _shimmer,
-      builder: (context, child) {
-        return Container(
-          width: double.infinity,
-          height: 50,
-          decoration: BoxDecoration(
-            gradient: _isLogin ? LinearGradient(colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.primary]) : LinearGradient(colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.primary]),
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: (_isLogin ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.error)
-                    .withValues(alpha: 0.3),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(12),
-              onTap: _loading ? null : _submitEmail,
-              child: ShaderMask(
-                shaderCallback: (bounds) =>
-                    const LinearGradient(colors: [Colors.transparent, Colors.white24, Colors.transparent])
-                        .createShader(bounds),
-                blendMode: BlendMode.srcATop,
-                child: Center(
-                  child: _loading
-                      ? SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                        )
-                      : Text(
-                          _isLogin ? 'LOG IN' : 'CREATE ACCOUNT',
-                          style: TextStyle(
-                            fontFamily: 'Orbitron',
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: Theme.of(context).colorScheme.onSurface,
-                            letterSpacing: 2,
-                          ),
-                        ),
+    return SizedBox(
+      width: double.infinity,
+      height: 50,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          elevation: 2,
+        ),
+        onPressed: _loading ? null : _submitEmail,
+        child: _loading
+            ? SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Theme.of(context).colorScheme.onPrimary,
+                ),
+              )
+            : Text(
+                _isLogin ? 'LOG IN' : 'CREATE ACCOUNT',
+                style: const TextStyle(
+                  fontFamily: 'Orbitron',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 2,
                 ),
               ),
-            ),
-          ),
-        );
-      },
+      ),
     );
   }
 
@@ -385,13 +345,10 @@ class _LoginSheetBodyState extends State<_LoginSheetBody>
           ),
           backgroundColor: Theme.of(context).cardColor.withValues(alpha: 0.5),
         ),
-        icon: Text(
-          'G',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
+        icon: Image.network(
+          'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/48px-Google_%22G%22_logo.svg.png',
+          height: 24,
+          width: 24,
         ),
         label: Text(
           'SIGN IN WITH GOOGLE',
