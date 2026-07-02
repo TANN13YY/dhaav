@@ -40,7 +40,12 @@ export const onUserCreated = functions.auth.user().onCreate(async (user) => {
     welcomeRPClaimed: false,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
   });
+
+  // Create mapping document for easy Firestore Rules lookup
+  await db.collection('AuthMap').doc(uid).set({ dhaavId: dhaavId });
 });
+
+
 
 // 2. onUserDeleted: Cleanup all user data
 export const onUserDeleted = functions.auth.user().onDelete(async (user) => {
@@ -133,22 +138,6 @@ export const claimWelcomeBonus = functions.https.onCall(async (data, context) =>
     });
   });
   
-  return { success: true };
-});
-
-// 4. setDeveloperRole: Assign Custom Claim
-export const setDeveloperRole = functions.https.onCall(async (data, context) => {
-  // In production, this should be protected by a secret or existing admin check.
-  // For this demo, we allow anyone who knows the secret code.
-  if (data.secret !== 'super_secret_dhaav_admin_code') {
-    throw new functions.https.HttpsError('permission-denied', 'Invalid secret');
-  }
-  
-  if (!context.auth) {
-    throw new functions.https.HttpsError('unauthenticated', 'Must be logged in');
-  }
-  
-  await admin.auth().setCustomUserClaims(context.auth.uid, { developer: true });
   return { success: true };
 });
 

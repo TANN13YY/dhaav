@@ -6,14 +6,24 @@ service cloud.firestore {
     function isAuthenticated() {
       return request.auth != null;
     }
-    
+
+    function getDhaavId() {
+      let mapDoc = get(/databases/$(database)/documents/AuthMap/$(request.auth.uid));
+      return mapDoc != null ? mapDoc.data.dhaavId : null;
+    }
+
+    function getUserDoc() {
+      let dhaavId = getDhaavId();
+      return dhaavId != null ? get(/databases/$(database)/documents/Users/$(dhaavId)) : null;
+    }
+
     function isOwner(ownerId) {
-      return isAuthenticated() && request.auth.uid == ownerId;
+      return isAuthenticated() && getDhaavId() == ownerId;
     }
 
     function isDeveloper() {
-      // Temporarily allow any authenticated user to act as a developer for the demo
-      return isAuthenticated();
+      let userDoc = getUserDoc();
+      return userDoc != null && userDoc.data.accountType == 'admin';
     }
 
     match /Users/{userId} {

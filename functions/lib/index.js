@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onRunDeleted = exports.onPendingTerritoryClaim = exports.submitRun = exports.adminSimulateTerritoryLoss = exports.adminClearMockData = exports.adminCreditRP = exports.setDeveloperRole = exports.claimWelcomeBonus = exports.onUserDeleted = exports.onUserCreated = void 0;
+exports.onRunDeleted = exports.onPendingTerritoryClaim = exports.submitRun = exports.adminSimulateTerritoryLoss = exports.adminClearMockData = exports.adminCreditRP = exports.claimWelcomeBonus = exports.onUserDeleted = exports.onUserCreated = void 0;
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 admin.initializeApp();
@@ -37,6 +37,8 @@ exports.onUserCreated = functions.auth.user().onCreate(async (user) => {
         welcomeRPClaimed: false,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
+    // Create mapping document for easy Firestore Rules lookup
+    await db.collection('AuthMap').doc(uid).set({ dhaavId: dhaavId });
 });
 // 2. onUserDeleted: Cleanup all user data
 exports.onUserDeleted = functions.auth.user().onDelete(async (user) => {
@@ -113,19 +115,6 @@ exports.claimWelcomeBonus = functions.https.onCall(async (data, context) => {
             areaM2: 0
         });
     });
-    return { success: true };
-});
-// 4. setDeveloperRole: Assign Custom Claim
-exports.setDeveloperRole = functions.https.onCall(async (data, context) => {
-    // In production, this should be protected by a secret or existing admin check.
-    // For this demo, we allow anyone who knows the secret code.
-    if (data.secret !== 'super_secret_dhaav_admin_code') {
-        throw new functions.https.HttpsError('permission-denied', 'Invalid secret');
-    }
-    if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'Must be logged in');
-    }
-    await admin.auth().setCustomUserClaims(context.auth.uid, { developer: true });
     return { success: true };
 });
 // 5. adminCreditRP: Developer mock data endpoint
